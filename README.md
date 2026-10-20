@@ -27,8 +27,27 @@ The "Meaning map" view shows how each piece moves through the model's space, lay
 
 ## Files
 
-- `server.py`: loads the model, captures the intermediate outputs with hooks (encoder hidden states and attention, gaps, start/end/inside logits, candidate pool, scores, abstention) and serves them at `/api/analyze`.
+- `server.py`: loads the model, captures the intermediate outputs with hooks and serves them at `/api/analyze`. It captures the encoder hidden states and attention, gaps, start/end/inside logits, the candidate pool and its scores, abstention, expected counts, classification logits, relation pairs and their scores, attribute scores and record instances.
 - `index.html`: the page (Three.js from a CDN, no build step).
+
+## API
+
+`POST /api/analyze` runs one `model.extract()` call with any mix of tasks:
+
+```json
+{
+  "text": "Tim Cook, the CEO of Apple, happily presented the iPhone 17 in Cupertino.",
+  "threshold": 0.5,
+  "entities": {"person": "Named people", "company": null, "product": null},
+  "attributes": {"mood": {"labels": ["happy", "annoyed"], "applies_to": ["person"]}},
+  "classifications": {"topic": ["technology", "sports", "politics"]},
+  "relations": ["works_for", "located_in"],
+  "structures": {"launch": {"fields": ["product", "company", "place"], "anchor": "product"}}
+}
+```
+
+`{"text": "...", "labels": ["person", "city"]}` is the entity-only shorthand.
+Limits: 60 words; 12 span queries in total (entity types + attribute labels + 2 per relation + structure fields); 3 classification tasks with 2 to 8 labels each.
 
 ## Simplifications
 
