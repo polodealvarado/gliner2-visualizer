@@ -224,21 +224,22 @@ def analyze(model, text, spec, threshold):
     words = [{"text": src[starts[j]:ends[j]], "start": starts[j], "end": ends[j], "token": word_tok[j]}
              for j in range(n_words)]
 
+    q_tok = marker_tok + cls_tok  # every question marker: span queries first, then classification choices
     layers, prev = [], None
     for li, h in enumerate(enc.hidden_states):
         h = h[0]
         pos = pca3(h, prev)
         prev = pos
-        hw, hq = h[word_tok], h[marker_tok]
-        sim = torch.nn.functional.cosine_similarity(hq[:, None], hw[None], dim=-1)  # [Q, W]
+        hw, hq = h[word_tok], h[q_tok]
+        sim = torch.nn.functional.cosine_similarity(hq[:, None], hw[None], dim=-1)  # [Q + choices, W]
         layer = {"pos": r(pos), "strip": r(h[:, :STRIP], 2), "label_sim": r(sim)}
         if li > 0:
             att = enc.attentions[li - 1][0].mean(0)  # [T, T], averaged over heads
-            # how much each label marker looks at each word (summed over the word's pieces)
-            per_word = torch.zeros(len(marker_tok), n_words)
+            # how much each question marker looks at each word (summed over the word's pieces)
+            per_word = torch.zeros(len(q_tok), n_words)
             for i, t in enumerate(tokens):
                 if t["word"] is not None:
-                    per_word[:, t["word"]] += att[marker_tok, i]
+                    per_word[:, t["word"]] += att[q_tok, i]
             layer.update(attn=r(att), label_attn=r(per_word))
         layers.append(layer)
 

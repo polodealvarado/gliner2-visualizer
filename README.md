@@ -21,7 +21,9 @@ The first run downloads the model from Hugging Face (~1.1 GB).
 
 ## What you see
 
-Ten stages stacked in a tower, from bottom to top: text and schema, tokenizer, embeddings, 12 Transformer layers, word and query vectors, gaps between words, "starts? ends?", candidates, scoring and decision.
+One tab per task: Entities, Classification, Relations, Structure, Attributes and All tasks. Each tab shows only the fields and examples of its task.
+
+The tower is the same at the bottom for every task: text and schema, tokenizer, embeddings, 12 Transformer layers, and word and query vectors. The span stages follow (gaps between words, "starts? ends?", candidates, scoring), shared by entity types, attribute labels, relation roles and structure fields. On top sits the head of the task: entity decision, attributes, head × tail pairs and relation scores, record instances and field assignment, or label scores and label decision. "All tasks" stacks every head and ends with all the answers.
 Each stage has three tabs: "What it does" (plain language), "With your sentence" (the real values) and "Under the hood" (shapes, parameters and the source file).
 The "Meaning map" view shows how each piece moves through the model's space, layer by layer.
 
@@ -63,7 +65,8 @@ Limits: 60 words; 12 span queries in total (entity types + attribute labels + 2 
 
 - Attention is shown as the average of the 12 heads.
 - The map is a 3D PCA projection, so distances are approximate. The similarity figures use the real 768 numbers.
-- The tower follows the span path that entity types, attribute labels, relation roles and structure fields share. The classification, attribute, relation and record heads are summed up in the panel; they are not drawn as plates yet.
+- Each task is decoded on its own. GLiNER2's constrained decoders (`Classifier` rules between tasks, `JointIE` typed relation graphs) are not shown.
+- Record plates list at most 8 instances per structure, and 8 candidates per field.
 - Limits: 60 words, 12 span queries and 3 classification tasks per sentence, so the drawing stays readable.
 
 ## Credits

@@ -25,7 +25,9 @@ header { display: grid; grid-template-columns: minmax(220px, 300px) 1fr; gap: 28
 .brand h1 { font: 600 27px/1.1 var(--serif); margin: 0 0 4px; letter-spacing: -0.01em; }
 .brand p { margin: 0; color: var(--muted); font-size: 13px; }
 form { display: grid; grid-template-columns: 1fr 180px auto; gap: 10px; align-items: end; }
-.tasks { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.tasks { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.taskbar { grid-column: 1 / -1; justify-self: start; flex-wrap: wrap; }
+pre.json { font: 11.5px/1.5 var(--mono); background: var(--wash); border-radius: 10px; padding: 10px 12px; max-height: 340px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
 .tasks input[type=text] { font-size: 13.5px; padding: 7px 10px; }
 .field label { display: block; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px 2px; }
 .field input[type=text] { width: 100%; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; }
@@ -161,7 +163,6 @@ dl.legend dd { margin: 0; color: var(--muted); }
   header { grid-template-columns: 1fr; gap: 12px; }
   form { grid-template-columns: 1fr auto; }
   form > .field:first-child { grid-column: 1 / -1; }
-  .tasks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   main { grid-template-columns: 1fr; }
   #rail { display: flex; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 8px 16px; gap: 4px; }
   #rail .item { min-width: 170px; border-left: 0; border-bottom: 3px solid transparent; border-radius: 10px 10px 0 0; }
@@ -188,18 +189,19 @@ dl.legend dd { margin: 0; color: var(--muted); }
 <header>
   <div class="brand">
     <h1>Inside GLiNER2.5</h1>
-    <p>Follow a sentence through the model, layer by layer, until it finds the entities.</p>
+    <p>Follow a sentence through the model, layer by layer, until it answers your schema.</p>
   </div>
   <form id="form">
+    <div class="seg taskbar" id="taskbar" role="group" aria-label="Task"></div>
     <div class="field"><label for="text">Your sentence</label><input id="text" type="text" autocomplete="off" spellcheck="false"></div>
     <div class="field"><label for="thr">Threshold</label><div class="thr"><input id="thr" type="range" min="0.05" max="0.95" step="0.05" value="0.5"><output id="thrOut">0.50</output></div></div>
     <button class="primary" id="go" type="submit">Analyze</button>
     <div class="tasks">
-      <div class="field"><label for="fEnt">Entities</label><input id="fEnt" type="text" autocomplete="off" spellcheck="false" placeholder="person = named people, company" title="Entity types, comma-separated. Add a description after =."></div>
-      <div class="field"><label for="fAttr">Attributes</label><input id="fAttr" type="text" autocomplete="off" spellcheck="false" placeholder="mood: happy, annoyed → person" title="group: labels → entity types it applies to. Separate groups with ;"></div>
-      <div class="field"><label for="fCls">Classification</label><input id="fCls" type="text" autocomplete="off" spellcheck="false" placeholder="topic: tech, sports; tone: good, bad" title="task: labels. Separate tasks with ;"></div>
-      <div class="field"><label for="fRel">Relations</label><input id="fRel" type="text" autocomplete="off" spellcheck="false" placeholder="works_for, located_in" title="Relation types, comma-separated."></div>
-      <div class="field"><label for="fStr">Structure</label><input id="fStr" type="text" autocomplete="off" spellcheck="false" placeholder="launch: product*, company, place" title="name: fields. * marks the anchor field (default: the first). Separate structures with ;"></div>
+      <div class="field" data-f="ent"><label for="fEnt">Entities</label><input id="fEnt" type="text" autocomplete="off" spellcheck="false" placeholder="person = named people, company" title="Entity types, comma-separated. Add a description after =."></div>
+      <div class="field" data-f="attr"><label for="fAttr">Attributes</label><input id="fAttr" type="text" autocomplete="off" spellcheck="false" placeholder="mood: happy, annoyed → person" title="group: labels → entity types it applies to. Separate groups with ;"></div>
+      <div class="field" data-f="cls"><label for="fCls">Classification</label><input id="fCls" type="text" autocomplete="off" spellcheck="false" placeholder="topic: tech, sports; tone: good, bad" title="task: labels. Separate tasks with ;"></div>
+      <div class="field" data-f="rel"><label for="fRel">Relations</label><input id="fRel" type="text" autocomplete="off" spellcheck="false" placeholder="works_for, located_in" title="Relation types, comma-separated."></div>
+      <div class="field" data-f="str"><label for="fStr">Structure</label><input id="fStr" type="text" autocomplete="off" spellcheck="false" placeholder="launch: product*, company, place" title="name: fields. * marks the anchor field (default: the first). Separate structures with ;"></div>
     </div>
     <div class="sub" id="examples"><span>Examples:</span><span id="status"></span></div>
   </form>
@@ -273,18 +275,62 @@ const ramp = (v, to = C.terra) => mix(C.paper, to, v);
 const diverge = (v) => (v >= 0 ? mix(C.paper, C.terra, v) : mix(C.paper, C.slate, -v));
 
 // ---------- state ----------
-const S = { step: 0, overview: true, label: 0, focusTok: 0, view: "flow", tab: "what", playing: false, sound: false, mapLayer: 0, mapPlaying: false };
+const S = { task: "entities", step: 0, overview: true, label: 0, focusTok: 0, view: "flow", tab: "what", playing: false, sound: false, mapLayer: 0, mapPlaying: false };
 let INFO = null, D = null, STEPS = [], plates = [];
 
-const EXAMPLES = [
-  { name: "Company and city", text: "Maria Garcia has worked at Telefónica in Madrid since 2019.", ent: "person, company, city, date", cls: "topic: business, sports, politics", rel: "works_for, located_in" },
-  { name: "Tech launch", text: "Tim Cook, the CEO of Apple, happily presented the iPhone 17 in Cupertino, while Elon Musk looked annoyed.", ent: "person = named people, company, product", attr: "mood: happy, annoyed → person", cls: "topic: technology, sports, politics", rel: "works_for, located_in", str: "launch: product*, company, place" },
-  { name: "Product review", text: "The camera is superb, but the battery dies by noon and support never answered my emails.", ent: "product feature", attr: "opinion: positive, negative → product feature", cls: "overall: positive, negative, mixed" },
-  { name: "Medical record", text: "Patient John Smith, aged 54, was admitted to St Mary's Hospital on 3 March with pneumonia.", ent: "person, age, hospital, date, disease", cls: "urgency: urgent, routine", str: "admission: patient*, hospital, date" },
-  { name: "Bank transfer", text: "Anna Lopez sent 1,200 euros to account ES91 2100 0418 4502 0005 1332 on Monday.", ent: "person, amount of money, account number, date", str: "transfer: sender*, amount, account, date" },
-  { name: "Ambiguous word", text: "We had a picnic on the river bank, then walked to the Bank of England.", ent: "location, organization" },
-  { name: "In Spanish", text: "María García trabaja en Telefónica en Madrid desde 2019.", ent: "person, company, city, date", rel: "works_for" },
-];
+const EXAMPLES = {
+  entities: [
+    { name: "Company and city", text: "Maria Garcia has worked at Telefónica in Madrid since 2019.", ent: "person, company, city, date" },
+    { name: "Medical record", text: "Patient John Smith, aged 54, was admitted to St Mary's Hospital on 3 March with pneumonia.", ent: "person, age, hospital, date, disease" },
+    { name: "With descriptions", text: "Patient received 400mg ibuprofen for severe headache at 2 PM.", ent: "medication = names of drugs, dosage = amounts such as 400mg, symptom, time" },
+    { name: "Bank transfer", text: "Anna Lopez sent 1,200 euros to account ES91 2100 0418 4502 0005 1332 on Monday.", ent: "person, amount of money, account number, date" },
+    { name: "Ambiguous word", text: "We had a picnic on the river bank, then walked to the Bank of England.", ent: "location, organization" },
+    { name: "In Spanish", text: "María García trabaja en Telefónica en Madrid desde 2019.", ent: "person, company, city, date" },
+  ],
+  classification: [
+    { name: "News topic", text: "The central bank raised interest rates again to fight inflation.", cls: "topic: economy, sports, politics, technology" },
+    { name: "Support ticket", text: "I was charged twice for my subscription and nobody answers my emails.", cls: "intent: billing, technical problem, cancellation; tone: angry, neutral, happy" },
+    { name: "Review", text: "This laptop has amazing performance but terrible battery life!", cls: "sentiment: positive, negative, neutral" },
+    { name: "In Spanish", text: "El partido terminó con un gol en el último minuto.", cls: "topic: sports, politics, economy" },
+  ],
+  relations: [
+    { name: "Company and city", text: "Maria Garcia has worked at Telefónica in Madrid since 2019.", rel: "works_for, located_in" },
+    { name: "Tech launch", text: "Tim Cook, the CEO of Apple, happily presented the iPhone 17 in Cupertino, while Elon Musk looked annoyed.", rel: "works_for, located_in" },
+    { name: "Two people", text: "Alice works for Acme in Paris. Bob joined Acme last year.", rel: "works_for, located_in" },
+    { name: "Marriage", text: "Marie Curie married Pierre Curie in Paris in 1895.", rel: "spouse_of, married_in" },
+  ],
+  structure: [
+    { name: "Purchases", text: "Alice bought apples and Bob bought oranges.", str: "purchase: buyer*, item" },
+    { name: "Tech launch", text: "Tim Cook, the CEO of Apple, happily presented the iPhone 17 in Cupertino, while Elon Musk looked annoyed.", str: "launch: product*, company, place" },
+    { name: "Medical record", text: "Patient John Smith, aged 54, was admitted to St Mary's Hospital on 3 March with pneumonia.", str: "admission: patient*, hospital, date" },
+    { name: "Bank transfer", text: "Anna Lopez sent 1,200 euros to account ES91 2100 0418 4502 0005 1332 on Monday.", str: "transfer: sender*, amount, account, date" },
+  ],
+  attributes: [
+    { name: "Mood", text: "Alice was delighted with the promotion, but Bob sounded frustrated about the delay.", ent: "person", attr: "mood: happy, frustrated → person" },
+    { name: "Praise and criticism", text: "Alice praised Microsoft, but Bob criticized OpenAI.", ent: "person, organization", attr: "sentiment: positive, negative, neutral → person" },
+    { name: "Product review", text: "The camera is superb, but the battery dies by noon and support never answered my emails.", ent: "product feature", attr: "opinion: positive, negative → product feature" },
+  ],
+  all: [
+    { name: "Tech launch", text: "Tim Cook, the CEO of Apple, happily presented the iPhone 17 in Cupertino, while Elon Musk looked annoyed.", ent: "person = named people, company, product", attr: "mood: happy, annoyed → person", cls: "topic: technology, sports, politics", rel: "works_for, located_in", str: "launch: product*, company, place" },
+    { name: "Company and city", text: "Maria Garcia has worked at Telefónica in Madrid since 2019.", ent: "person, company, city, date", cls: "topic: business, sports, politics", rel: "works_for, located_in" },
+    { name: "Medical record", text: "Patient John Smith, aged 54, was admitted to St Mary's Hospital on 3 March with pneumonia.", ent: "person, age, hospital, date, disease", cls: "urgency: urgent, routine", str: "admission: patient*, hospital, date" },
+  ],
+};
+// one tab per task: which form fields it uses and which head plates sit on top of the shared trunk
+const TASKS = {
+  entities: { title: "Entities", fields: ["ent"], heads: ["decide"],
+    intro: "Here it finds <b>entities</b>: stretches of text of the types you ask for (people, companies, dates…), even types it never saw during training." },
+  classification: { title: "Classification", fields: ["cls"], heads: ["clsScore", "clsDecide"],
+    intro: "Here it <b>classifies the whole text</b>: for each task you write, it picks the label that fits best. No stretch of text is cut out." },
+  relations: { title: "Relations", fields: ["rel"], heads: ["relPairs", "relDecide"],
+    intro: "Here it extracts <b>relations</b>: pairs of stretches linked by a type you name, such as Tim Cook → works_for → Apple." },
+  structure: { title: "Structure", fields: ["str"], heads: ["recInst", "recFields"],
+    intro: "Here it fills <b>structures</b>: records with fields, keeping which value belongs to which record." },
+  attributes: { title: "Attributes", fields: ["ent", "attr"], heads: ["decide", "attr"],
+    intro: "Here it finds entities and gives each one an <b>attribute</b>, such as the mood of each person." },
+  all: { title: "All tasks", fields: ["ent", "attr", "cls", "rel", "str"], heads: ["decide", "attr", "relPairs", "relDecide", "recInst", "recFields", "clsScore", "clsDecide", "result"],
+    intro: "Here it does <b>every task at once</b>: one schema, one pass through the encoder, and every head reads the same vectors." },
+};
 const FIELDS = { ent: "#fEnt", attr: "#fAttr", cls: "#fCls", rel: "#fRel", str: "#fStr" };
 const TASK_NAME = { entities: "Entities", relations: "Relation", json_structures: "Structure", classifications: "Classification" };
 const MARKERS = [
@@ -298,18 +344,39 @@ const MARKERS = [
   ["[SEP_TEXT]", "The schema ends here and your text begins."],
 ];
 
-const GROUPS = [
-  { key: "input", title: "Text and schema", short: "Your sentence and the list of things you ask for." },
-  { key: "tokens", title: "Tokenizer", short: "Cuts the text into pieces the model knows." },
-  { key: "embed", title: "Embeddings", short: "Each piece is swapped for a list of numbers." },
-  { key: "layer", title: "Transformer", short: "Each piece looks at the others and updates itself." },
-  { key: "pick", title: "Word and query vectors", short: "One vector per word and one per query." },
-  { key: "gaps", title: "Gaps between words", short: "An entity starts at one gap and ends at another." },
-  { key: "marks", title: "Starts? Ends?", short: "Each query scores every gap and every word." },
-  { key: "pool", title: "Candidates", short: "Combines the most promising starts and ends." },
-  { key: "score", title: "Scoring", short: "Each candidate gets a score per query." },
-  { key: "decide", title: "Decision", short: "Threshold, overlaps and final answer." },
-];
+const G = {
+  input: { title: "Text and schema", short: "Your sentence and the list of things you ask for." },
+  tokens: { title: "Tokenizer", short: "Cuts the text into pieces the model knows." },
+  embed: { title: "Embeddings", short: "Each piece is swapped for a list of numbers." },
+  layer: { title: "Transformer", short: "Each piece looks at the others and updates itself." },
+  pick: { title: "Word and query vectors", short: "One vector per word and one per query." },
+  gaps: { title: "Gaps between words", short: "A stretch starts at one gap and ends at another." },
+  marks: { title: "Starts? Ends?", short: "Each query scores every gap and every word." },
+  pool: { title: "Candidates", short: "Combines the most promising starts and ends." },
+  score: { title: "Scoring", short: "Each candidate gets a score per query." },
+  decide: { title: "Entity decision", short: "Threshold, overlaps and final entities." },
+  attr: { title: "Attributes", short: "Each entity gets the best label of each group." },
+  relPairs: { title: "Head × tail pairs", short: "The best heads and tails are paired up." },
+  relDecide: { title: "Relation scores", short: "Each pair gets a probability; the best are kept." },
+  recInst: { title: "Record instances", short: "One possible record per anchor stretch." },
+  recFields: { title: "Field assignment", short: "Each record picks a value, or none, per field." },
+  clsScore: { title: "Label scores", short: "Each [L] vector becomes one number." },
+  clsDecide: { title: "Label decision", short: "Softmax or a threshold picks the label." },
+  result: { title: "All answers", short: "Everything the schema asked for." },
+};
+const TRUNK = ["input", "tokens", "embed", "layer", "pick"], SPAN = ["gaps", "marks", "pool", "score"];
+const SPANLIKE = new Set([...SPAN, "decide", "attr", "relPairs", "relDecide", "recInst", "recFields", "result"]), CLSLIKE = new Set(["clsScore", "clsDecide"]);
+const RAISED = new Set(["pool", "score", "attr", "relPairs", "relDecide", "recInst", "recFields", "clsScore", "clsDecide", "result"]);
+let GROUPS = [];
+// the stages of the current tab; with data, heads the schema did not ask for are left out
+function groupsFor(d) {
+  const has = (k) => !d || ({ decide: d.queries.some((q) => q.kind === "entity"), attr: d.attributes.length > 0,
+    relPairs: d.input.schema.relations.length > 0, relDecide: d.input.schema.relations.length > 0,
+    recInst: d.records.length > 0, recFields: d.records.length > 0,
+    clsScore: d.classifications.length > 0, clsDecide: d.classifications.length > 0 }[k] ?? true);
+  const span = (d ? d.Q > 0 : S.task !== "classification") ? SPAN : [];
+  return [...TRUNK, ...span, ...TASKS[S.task].heads.filter(has)].map((key) => ({ key, ...G[key] }));
+}
 function buildSteps(n) {
   STEPS = [];
   GROUPS.forEach((g, gi) => {
@@ -427,7 +494,7 @@ function makePlate(st, idx, y, width, depth, cz = 0) {
   base.userData = { kind: "plate", idx };
   group.add(base);
   const p = { idx, step: st, y, width, depth, cz, group, base, tiles: [], hits: [base], labels: new THREE.Group(), extra: new THREE.Group(),
-    anch: { tok: [], word: [], label: [], choice: [], gap: [], start: [], end: [], cand: [] }, op: 1, target: 1 };
+    anch: { tok: [], word: [], label: [], choice: [], gap: [], start: [], end: [], cand: [], pair: [], inst: [] }, op: 1, target: 1 };
   group.add(p.labels, p.extra);
   const title = sprite(stepTitle(st), st.key === "layer" ? 0.34 : 0.46, `600 ${st.key === "layer" ? 44 : 58}px "Playfair Display", serif`, C.ink);
   title.center.set(1, 0.5);
@@ -475,7 +542,7 @@ function wordLayout() {
     else WL.gx.push((WL.xs[j - 1] + WL.ws[j - 1] / 2 + WL.xs[j] - WL.ws[j] / 2) / 2);
   }
 }
-function wordPlate(st, idx, y, { depth = 3, wz = 0.55, wh = 0.18, labels = false, gapNums = false } = {}) {
+function wordPlate(st, idx, y, { depth = 3, wz = 0.55, wh = 0.18, labels = false, gapNums = false, back = 0 } = {}) {
   // schema rows: span queries grouped by task, then classification choices; whole groups wrap onto rows further back
   const nameOf = (it) => (it.q != null ? D.queries[it.q].short + (D.queries[it.q].anchor ? " *" : "") : D.choices[it.ci].label);
   const tileW = (it) => (it.gap ? 0.3 : clamp(0.4 + 0.12 * nameOf(it).length, 0.8, 2.6));
@@ -485,7 +552,7 @@ function wordPlate(st, idx, y, { depth = 3, wz = 0.55, wh = 0.18, labels = false
     const line = lines.at(-1);
     if (line && line.w + 0.6 + w <= maxW) { line.items.push({ gap: true }, ...its); line.w += 0.6 + w; } else lines.push({ items: its, w });
   });
-  const LLs = lines.map((l) => row(l.items, tileW, 0.3)), extra = ROW * Math.max(0, lines.length - 1);
+  const LLs = lines.map((l) => row(l.items, tileW, 0.3)), extra = ROW * Math.max(0, lines.length - 1) + back;
   const p = makePlate(st, idx, y, Math.max(WL.total, ...LLs.map((L) => L.total)) + 1.6, (labels ? depth + 0.6 : depth) + extra, -extra / 2);
   D.words.forEach((w, j) => {
     p.anch.word[j] = addTile(p, WL.xs[j], wz, WL.ws[j], 0.5, wh, "#CBA275", { type: "word", j });
@@ -551,28 +618,170 @@ const BUILD = {
     return p;
   },
   score: (st, i, y) => arcPlate(st, i, y),
-  decide: (st, i, y) => {
-    const p = wordPlate(st, i, y, { wh: 0.06 }), stacked = {};
-    D.entities.forEach((e) => {
-      const js = D.words.map((w, j) => j).filter((j) => D.words[j].start >= e.start && D.words[j].end <= e.end);
+  decide: (st, i, y) => { const p = wordPlate(st, i, y, { wh: 0.06 }); markEntities(p, D.entities); return p; },
+  attr: (st, i, y) => {
+    const p = wordPlate(st, i, y, { wh: 0.06, back: lanes(D.attributes.length) });
+    D.attributes.forEach((a, ai) => a.items.forEach((it) => {
+      const js = wordsIn(it.start, it.end);
       if (!js.length) return;
-      js.forEach((j) => { const m = p.anch.word[j]; m.material.color.set(LC(e.label)); m.userData.color = LC(e.label); m.userData.th = 0.5; m.userData.ent = e; });
-      const a = js[0], b = js.at(-1), x = (WL.xs[a] - WL.ws[a] / 2 + WL.xs[b] + WL.ws[b] / 2) / 2;
-      const tag = sprite(`${D.input.labels[e.label]} · ${f2(e.score)}`, 0.34, '600 46px Inter, sans-serif', LC(e.label));
-      const n = (stacked[`${e.start}-${e.end}`] = (stacked[`${e.start}-${e.end}`] ?? -1) + 1);
-      tag.position.set(x, TOP + 1.05 + 0.42 * n, 0.55);
+      js.forEach((j) => paint(p, j, LC(it.label), 0.3));
+      const [x0, x1] = spanEdges(js), n = a.labels.length, w = Math.min(0.55, (x1 - x0 - 0.1) / n), z = -0.35 - 0.75 * ai, best = argmax(it.probs);
+      a.labels.forEach((l, li) => addTile(p, x0 + ((x1 - x0) * (li + 0.5)) / n, z, w, 0.36, 0.03 + 1.2 * it.probs[li], LC(attrQ(a, l)), { type: "attr", ai, li, item: it }));
+      const tag = sprite(`${a.group}: ${a.labels[best]} · ${f2(it.probs[best])}`, 0.28, '600 46px Inter, sans-serif', LC(attrQ(a, a.labels[best])));
+      tag.position.set((x0 + x1) / 2, TOP + 1.2 * it.probs[best] + 0.4, z);
       p.labels.add(tag);
+    }));
+    return p;
+  },
+  relPairs: (st, i, y) => {
+    const types = D.input.schema.relations, p = wordPlate(st, i, y, { wz: 0.9, wh: 0.06, back: lanes(types.length) });
+    D.relations.forEach((r, pi) => (p.anch.pair[pi] = relationArc(p, r, "pair")));
+    laneNames(p, types.map((t) => [t, LC(relQ(t))]));
+    return p;
+  },
+  relDecide: (st, i, y) => {
+    const types = D.input.schema.relations, p = wordPlate(st, i, y, { wz: 0.9, wh: 0.06, back: lanes(types.length) });
+    D.relations.forEach((r, pi) => (p.anch.pair[pi] = relationArc(p, r, r.kept ? "kept" : "dropped")));
+    laneNames(p, types.map((t) => [t, LC(relQ(t))]));
+    return p;
+  },
+  recInst: (st, i, y) => {
+    const n = D.records.reduce((a, g) => a + g.instances.length, 0), p = wordPlate(st, i, y, { wz: 0.9, wh: 0.06, back: 0.5 * Math.max(0, n - 2) });
+    let lane = 0;
+    D.records.forEach((g, gi) => {
+      const q = fieldQ(g, g.fields.find((f) => f.anchor)?.name);
+      g.instances.forEach((inst, k) => {
+        const z = 0.25 - 0.5 * lane++;
+        if (!inst.span) return;
+        const x0 = WL.gx[inst.span[0]], x1 = WL.gx[inst.span[1]], kept = inst.prob >= g.threshold;
+        (p.anch.inst[gi] ??= [])[k] = addTile(p, (x0 + x1) / 2, z, Math.max(0.25, x1 - x0 - 0.2), 0.32, 0.03 + 1.3 * inst.prob, kept ? LC(q) : mix(LC(q), "#FFFFFF", 0.6), { type: "inst", gi, k });
+        if (!kept) return;
+        const tag = sprite(`${g.name} · ${f2(inst.prob)}`, 0.28, '600 46px Inter, sans-serif', LC(q));
+        tag.position.set((x0 + x1) / 2, TOP + 1.3 * inst.prob + 0.4, z);
+        p.labels.add(tag);
+      });
     });
     return p;
   },
+  recFields: (st, i, y) => {
+    const n = D.records.reduce((a, g) => a + g.result.length, 0), p = wordPlate(st, i, y, { wz: 0.9, wh: 0.06, back: lanes(n) });
+    let lane = 0;
+    D.records.forEach((g) => {
+      const anchor = g.fields.find((f) => f.anchor);
+      g.result.forEach((rec) => {
+        const z = 0.2 - 0.75 * lane++, a = one(rec[anchor.name]), ja = a ? wordsIn(a.start, a.end) : [];
+        if (!ja.length) return;
+        const ax = mid(spanEdges(ja)), ac = LC(fieldQ(g, anchor.name));
+        ja.forEach((j) => paint(p, j, ac, 0.35));
+        const tag = sprite(`${g.name} #${lane}`, 0.3, '600 46px Inter, sans-serif', ac);
+        tag.position.set(ax, TOP + 0.95, 0.9);
+        p.labels.add(tag);
+        g.fields.forEach((f) => {
+          const v = one(rec[f.name]), js = v && !f.anchor ? wordsIn(v.start, v.end) : [];
+          if (!js.length) return;
+          const color = LC(fieldQ(g, f.name)), x = mid(spanEdges(js)), curve = arc(ax, x, z, 0.35 + 0.08 * Math.abs(x - ax));
+          js.forEach((j) => paint(p, j, color, 0.35));
+          const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, 0.035, 8, false), mat(color));
+          tube.castShadow = true;
+          p.extra.add(tube);
+          const t = sprite(`${f.name} · ${f2(v.confidence)}`, 0.26, '600 46px Inter, sans-serif', color);
+          t.position.set(x, TOP + 0.95, 0.9);
+          p.labels.add(t);
+        });
+      });
+    });
+    return p;
+  },
+  clsScore: (st, i, y) => choicePlate(st, i, y, (c, j) => 0.05 + (1.3 * Math.abs(c.logits[j])) / (Math.max(...c.logits.map(Math.abs)) || 1),
+    (c, j) => (c.logits[j] >= 0 ? C.cls : mix(C.cls, "#FFFFFF", 0.62)), (c, j) => f2(c.logits[j])),
+  clsDecide: (st, i, y) => choicePlate(st, i, y, (c, j) => 0.05 + 1.5 * c.probs[j],
+    (c, j) => (c.chosen.includes(j) ? C.cls : mix(C.cls, "#FFFFFF", 0.62)), (c, j) => (c.chosen.includes(j) ? `${c.task}: ${c.labels[j]} · ${f2(c.probs[j])}` : null)),
+  result: (st, i, y) => {
+    const types = D.input.schema.relations, nc = D.classifications.length;
+    const p = wordPlate(st, i, y, { wz: 0.9, wh: 0.06, back: lanes(types.length) + (nc ? 1 : 0) });
+    markEntities(p, D.entities);
+    D.relations.filter((r) => r.kept).forEach((r) => relationArc(p, r, "kept"));
+    const texts = D.classifications.map((c) => `${c.task}: ${c.chosen.map((j) => c.labels[j]).join(", ")}`), L = row(texts, (t) => 0.19 * t.length, 1);
+    texts.forEach((t, k) => { const sp = sprite(t, 0.38, '600 50px Inter, sans-serif', C.cls); sp.position.set(L.xs[k], TOP + 0.45, 0.2 - 0.75 * Math.max(1, types.length)); p.labels.add(sp); });
+    return p;
+  },
 };
+const wordsIn = (start, end) => D.words.flatMap((w, j) => (w.start >= start && w.end <= end ? [j] : []));
+const spanEdges = (js) => [WL.xs[js[0]] - WL.ws[js[0]] / 2, WL.xs[js.at(-1)] + WL.ws[js.at(-1)] / 2];
+const mid = ([a, b]) => (a + b) / 2;
+const gapMid = ([s, e]) => (WL.gx[s] + WL.gx[e]) / 2; // centre of a half-open word span
+const lanes = (n) => 0.75 * Math.max(0, n - 1); // extra plate depth for n lanes, 0.75 apart
+const one = (v) => (Array.isArray(v) ? v[0] : v);
+const relQ = (type) => D.queries.findIndex((q) => q.kind === "relation" && q.task === type && q.role === "head");
+const fieldQ = (g, name) => D.queries.findIndex((q) => q.kind === "structure" && q.task === g.name && q.role === name);
+const attrQ = (a, label) => D.queries.findIndex((q) => q.kind === "attribute" && q.group === a.group && q.short === label);
+function paint(p, j, color, h) { const m = p.anch.word[j]; m.material.color.set(color); m.userData.color = color; m.userData.th = h; }
+function markEntities(p, ents) {
+  const stacked = {};
+  ents.forEach((e) => {
+    const js = wordsIn(e.start, e.end);
+    if (!js.length) return;
+    js.forEach((j) => { paint(p, j, LC(e.label), 0.5); p.anch.word[j].userData.ent = e; });
+    const tag = sprite(`${D.input.labels[e.label]} · ${f2(e.score)}`, 0.34, '600 46px Inter, sans-serif', LC(e.label));
+    const n = (stacked[`${e.start}-${e.end}`] = (stacked[`${e.start}-${e.end}`] ?? -1) + 1);
+    tag.position.set(mid(spanEdges(js)), TOP + 1.05 + 0.42 * n, p.anch.word[js[0]].position.z);
+    p.labels.add(tag);
+  });
+}
+// one lane per relation type; "pair" = proposed, "kept" = above threshold, "dropped" = below
+function relationArc(p, r, mode) {
+  const x0 = gapMid(r.head), x1 = gapMid(r.tail), z = 0.2 - 0.75 * D.input.schema.relations.indexOf(r.type), color = LC(relQ(r.type));
+  const kept = mode === "kept", curve = arc(x0, x1, z, 0.3 + 0.08 * Math.abs(x1 - x0) + (kept ? 0.5 * r.prob : 0));
+  if (mode === "dropped") {
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(28)), new THREE.LineBasicMaterial({ color, transparent: true }));
+    line.userData.bo = 0.25;
+    p.extra.add(line);
+    return curve.getPoint(0.5);
+  }
+  const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, kept ? 0.045 : 0.018, 8, false), mat(color));
+  tube.castShadow = kept;
+  tube.userData = { kind: "tile", p, info: { type: "pair", r }, bo: kept ? 1 : 0.25 + 0.7 * Math.min(r.head_prob, r.tail_prob) };
+  p.extra.add(tube); p.hits.push(tube);
+  if (kept) {
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.26, 12), mat(color));
+    tip.rotation.x = Math.PI; tip.position.set(x1, TOP + 0.14, z);
+    p.extra.add(tip);
+    const m = curve.getPoint(0.5), tag = sprite(`${r.type} · ${f2(r.prob)}`, 0.3, '600 46px Inter, sans-serif', color);
+    tag.position.set(m.x, m.y + 0.3, z);
+    p.labels.add(tag);
+  }
+  return curve.getPoint(0.5);
+}
+function laneNames(p, names) {
+  names.forEach(([t, color], ri) => {
+    const m = flatText(p.labels, t, 0, 0.2 - 0.75 * ri, 0.24, null, color);
+    m.geometry.computeBoundingBox(); m.position.x = WL.gx[0] - 0.4 - m.geometry.boundingBox.max.x;
+  });
+}
+// classification plates: one lane per task, one bar per label
+function choicePlate(st, idx, y, height, color, tagOf) {
+  const rows = D.classifications.map((c) => row(c.labels, (l) => clamp(0.6 + 0.13 * l.length, 1.2, 3), 0.5));
+  const p = makePlate(st, idx, y, Math.max(8, ...rows.map((L) => L.total)) + 2, 1.9 * rows.length + 1.2, -0.95 * (rows.length - 1));
+  D.classifications.forEach((c, ti) => {
+    const L = rows[ti], z = 0.2 - 1.9 * ti;
+    c.labels.forEach((l, j) => {
+      const ci = D.choices.findIndex((x) => x.ti === ti && x.j === j), h = height(c, j);
+      p.anch.choice[ci] = addTile(p, L.xs[j], z, L.ws[j], 0.6, h, color(c, j), { type: "clsv", ci });
+      flatText(p.labels, l, L.xs[j], z + 0.65, 0.3, L.ws[j], C.cls);
+      const t = tagOf(c, j);
+      if (t) { const sp = sprite(t, 0.3, '600 46px Inter, sans-serif', C.cls); sp.position.set(L.xs[j], TOP + h + 0.35, z); p.labels.add(sp); }
+    });
+    flatText(p.labels, `${c.task} · classification`, 0, z - 0.7, 0.24, null, C.muted);
+  });
+  return p;
+}
 
 function buildTower() {
   dispose(tower); clearTextCache(); plates = []; wordLayout();
   let y = 0;
   STEPS.forEach((st, i) => {
     const prev = STEPS[i - 1];
-    if (prev) y += (st.key === "layer" ? 1.1 : prev.key === "pool" || prev.key === "score" ? 3.2 : 2.6);
+    if (prev) y += st.key === "layer" ? 1.1 : RAISED.has(prev.key) ? 3.2 : 2.6;
     plates.push(BUILD[st.key](st, i, y));
   });
   plates.forEach((p) => p.tiles.forEach((m) => { m.scale.y = m.userData.h = m.userData.th; m.position.y = TOP + m.userData.th / 2; }));
@@ -582,7 +791,7 @@ function buildTower() {
 function scoreArcs(p) {
   dispose(p.extra);
   p.hits = [p.base, ...p.tiles];
-  const q = S.label, thr = D.input.threshold;
+  const q = sq(), thr = D.input.threshold;
   D.candidates.forEach((c, ci) => {
     const pr = c.probs[q], h = 0.22 + 1.5 * pr;
     const curve = arc(WL.gx[c.s], WL.gx[c.e], arcZ(c), h);
@@ -638,11 +847,13 @@ function updateHeights() {
       const sim = last.label_sim[q], mn = Math.min(...sim), mx = Math.max(...sim);
       p.anch.word.forEach((m, j) => { m.userData.th = k === "pick" ? 0.06 + 0.62 * (sim[j] - mn) / (mx - mn || 1) : 0.18; });
       p.anch.label.forEach((m, i) => { m.userData.th = i === q ? 0.5 : 0.16; });
+      p.anch.choice.forEach((m, ci) => { m.userData.th = D.Q + ci === q ? 0.5 : 0.16; });
     }
     if (k === "marks") {
-      p.anch.word.forEach((m, j) => { m.userData.th = 0.04 + 0.8 * D.boundary.inside[q][j]; m.material.color.set(mix("#DEC6A4", C.olive, D.boundary.inside[q][j])); });
-      p.anch.start.forEach((m, j) => { m.userData.th = 0.03 + 1.3 * D.boundary.start[q][j]; });
-      p.anch.end.forEach((m, j) => { m.userData.th = 0.03 + 1.3 * D.boundary.end[q][j]; });
+      const b = sq();
+      p.anch.word.forEach((m, j) => { m.userData.th = 0.04 + 0.8 * D.boundary.inside[b][j]; m.material.color.set(mix("#DEC6A4", C.olive, D.boundary.inside[b][j])); });
+      p.anch.start.forEach((m, j) => { m.userData.th = 0.03 + 1.3 * D.boundary.start[b][j]; });
+      p.anch.end.forEach((m, j) => { m.userData.th = 0.03 + 1.3 * D.boundary.end[b][j]; });
     }
     if (k === "score") scoreArcs(p);
   });
@@ -660,7 +871,7 @@ let flows = [], flowT0 = 0;
 const topOf = (m) => { const v = new THREE.Vector3(m.position.x, TOP + m.userData.th, m.position.z); return m.parent.localToWorld(v); };
 const worldOf = (p, v) => p.group.localToWorld(v.clone());
 function flowPairs(a, b) {
-  const out = [], T = D.tokens;
+  const out = [], T = D.tokens, top = (m) => m && topOf(m), P = (key) => plates.find((x) => x.step.key === key);
   const add = (from, to, color) => from && out.push([from, to, color]);
   switch (b.step.key) {
     case "tokens": T.forEach((t, k) => {
@@ -679,10 +890,19 @@ function flowPairs(a, b) {
     case "gaps": D.words.forEach((w, j) => { add(topOf(a.anch.word[j]), topOf(b.anch.gap[j]), C.sand); add(topOf(a.anch.word[j]), topOf(b.anch.gap[j + 1]), C.sand); }); break;
     case "marks": a.anch.gap.forEach((g, j) => { add(topOf(g), topOf(b.anch.start[j]), C.terra); add(topOf(g), topOf(b.anch.end[j]), C.slate); }); break;
     case "pool": D.candidates.slice(0, 80).forEach((c, ci) => { add(topOf(a.anch.start[c.s]), worldOf(b, b.anch.cand[ci]), C.terra); add(topOf(a.anch.end[c.e]), worldOf(b, b.anch.cand[ci]), C.slate); }); break;
-    case "score": D.candidates.slice(0, 120).forEach((c, ci) => add(worldOf(a, a.anch.cand[ci]), worldOf(b, b.anch.cand[ci]), mix("#B9C2C8", LC(S.label), c.probs[S.label]))); break;
+    case "score": D.candidates.slice(0, 120).forEach((c, ci) => add(worldOf(a, a.anch.cand[ci]), worldOf(b, b.anch.cand[ci]), mix("#B9C2C8", LC(sq()), c.probs[sq()]))); break;
     case "decide": D.candidates.forEach((c, ci) => {
       c.final.forEach((q) => { for (let j = c.s; j < c.e; j++) add(worldOf(a, a.anch.cand[ci]), topOf(b.anch.word[j]), LC(q)); });
     }); break;
+    // head plates take their input from the stage that feeds them, which is not always the plate below
+    case "attr": { const src = P("decide"); D.attributes.forEach((at) => at.items.forEach((it) => wordsIn(it.start, it.end).forEach((j) => add(top(src?.anch.word[j]), top(b.anch.word[j]), LC(it.label))))); } break;
+    case "relPairs": { const src = P("score"); D.relations.forEach((r, pi) => [r.head, r.tail].forEach(([s0, e0], side) => { for (let j = s0; j < e0; j++) add(top(src?.anch.word[j]), worldOf(b, b.anch.pair[pi]), LC(relQ(r.type) + side)); })); } break;
+    case "relDecide": D.relations.forEach((r, pi) => a.anch.pair[pi] && add(worldOf(a, a.anch.pair[pi]), worldOf(b, b.anch.pair[pi]), LC(relQ(r.type)))); break;
+    case "recInst": { const src = P("score"); D.records.forEach((g, gi) => g.instances.forEach((inst, k) => { const m = b.anch.inst[gi]?.[k]; if (m && inst.span) for (let j = inst.span[0]; j < inst.span[1]; j++) add(top(src?.anch.word[j]), topOf(m), LC(fieldQ(g, g.fields.find((f) => f.anchor)?.name))); })); } break;
+    case "recFields": D.records.forEach((g, gi) => g.instances.forEach((inst, k) => { const m = a.anch.inst[gi]?.[k]; if (m && inst.prob >= g.threshold) inst.fields.forEach((f, fi) => { const c = f.cands[0]; if (c && !g.fields[fi].anchor) for (let j = c.span[0]; j < c.span[1]; j++) add(topOf(m), top(b.anch.word[j]), LC(fieldQ(g, g.fields[fi].name))); }); })); break;
+    case "clsScore": { const src = P("pick"); D.choices.forEach((c, ci) => add(top(src?.anch.choice[ci]), top(b.anch.choice[ci]), C.cls)); } break;
+    case "clsDecide": D.choices.forEach((c, ci) => add(top(a.anch.choice[ci]), top(b.anch.choice[ci]), C.cls)); break;
+    case "result": { const src = P("decide"); D.entities.forEach((e) => wordsIn(e.start, e.end).forEach((j) => add(top(src?.anch.word[j]), top(b.anch.word[j]), LC(e.label)))); } break;
   }
   return out;
 }
@@ -723,7 +943,7 @@ function fitDistance(w, h) {
   return Math.max((w / 2) / (Math.tan(fv) * camera.aspect), (h / 2) / Math.tan(fv));
 }
 function focusPlate(p) {
-  const raised = p.step.key === "pool" || p.step.key === "score";
+  const raised = RAISED.has(p.step.key);
   // ponytail: wide token plates do not fit legibly, so the camera frames the focused token and what it looks at
   let span = p.width + 3, x = 0;
   if (p.anch.tok.length) {
@@ -758,7 +978,7 @@ function setTargets() {
   plates.forEach((p, j) => {
     const on = S.overview || j === S.step;
     p.target = on ? 1 : j > S.step ? 0 : 0.07;
-    p.labels.visible = S.overview ? ["input", "decide"].includes(p.step.key) : on;
+    p.labels.visible = S.overview ? p.step.key === "input" || j === plates.length - 1 : on;
     p.tiles.forEach((m) => (m.castShadow = !S.overview && on));
     p.dirty = true;
   });
@@ -768,6 +988,10 @@ function selectStep(i, { flow = false } = {}) {
   i = clamp(i, 0, STEPS.length - 1);
   const prev = S.overview ? null : S.step;
   S.step = i; S.overview = false;
+  // span plates follow a span query, classification plates a classification choice
+  const key = STEPS[i].key;
+  if (SPANLIKE.has(key) && S.label >= D.Q) follow(0);
+  if (CLSLIKE.has(key) && S.label < D.Q && D.choices.length) follow(D.Q);
   setTargets();
   plates.forEach(attnArcs);
   focusPlate(plates[i]);
@@ -791,7 +1015,8 @@ async function play() {
   }
   stopPlay();
 }
-function setLabel(q) { S.label = q; S.focusTok = D.markers[q]; updateHeights(); renderPanel(); if (!S.overview && S.view === "flow") focusPlate(plates[S.step]); if (S.view === "map") mapRefresh(); blip(520, 0.08, 0.02); }
+function follow(q) { S.label = q; S.focusTok = D.qmarkers[q]; updateHeights(); }
+function setLabel(q) { follow(q); renderPanel(); if (!S.overview && S.view === "flow") focusPlate(plates[S.step]); if (S.view === "map") mapRefresh(); blip(520, 0.08, 0.02); }
 
 // ---------- map of meanings (PCA of each layer) ----------
 let mapPts = [], mapTrails = [], nearLine = null;
@@ -828,11 +1053,11 @@ function stepMap() {
     if (m.userData.tag) m.userData.tag.position.copy(m.position).add(new THREE.Vector3(0, 0.38, 0));
   });
   const q = S.label, j = argmax(D.layers[S.mapLayer].label_sim[q]);
-  const a = mapPts[D.markers[q]].position, b = mapPts[D.words[j].token].position;
+  const a = mapPts[D.qmarkers[q]].position, b = mapPts[D.words[j].token].position;
   const pa = nearLine.geometry.attributes.position;
   pa.setXYZ(0, a.x, a.y, a.z); pa.setXYZ(1, b.x, b.y, b.z); pa.needsUpdate = true;
   nearLine.geometry.computeBoundingSphere();
-  nearLine.material.color.set(LC(q));
+  nearLine.material.color.set(qColor(q));
 }
 async function mapPlay() {
   if (S.mapPlaying) { S.mapPlaying = false; return; }
@@ -867,7 +1092,7 @@ function pick(e) {
 function tipHTML(o) {
   const u = o.userData;
   if (u.kind === "plate") { const st = STEPS[u.idx]; return `<b>${esc(stepTitle(st))}</b><span>${esc(GROUPS[st.g].short)}</span><span>Click to see it up close.</span>`; }
-  const i = u.info, q = S.label, L = D.input.labels;
+  const i = u.info, q = S.label, b = sq(), L = D.input.labels;
   const kindName = (t) => t.kind === "text" ? (t.first ? "First piece of a word" : "Text piece (continues the word)")
     : t.kind === "marker" ? (t.label != null ? `Marker of the query “${esc(L[t.label])}”` : t.ci != null ? `Classification label “${esc(D.choices[t.ci].label)}” of “${esc(D.choices[t.ci].task)}”` : MARKERS.find(([m]) => m === t.piece)?.[1] ?? "Special marker")
     : t.lab != null ? `Name of the query “${esc(L[t.lab])}”` : t.ci != null ? `Name of the classification label “${esc(D.choices[t.ci].label)}”` : t.desc ? "Part of a label description" : "Part of the schema";
@@ -882,17 +1107,21 @@ function tipHTML(o) {
   if (i.type === "word") {
     const w = D.words[i.j];
     let extra = "";
-    if (key === "pick") extra = `Similarity to “${esc(L[q])}”: ${f2(D.layers.at(-1).label_sim[q][i.j])}`;
-    if (key === "marks") extra = `Probability of being inside a “${esc(L[q])}”: ${f2(D.boundary.inside[q][i.j])}`;
+    if (key === "pick") extra = `Similarity to “${esc(qName(q))}”: ${f2(D.layers.at(-1).label_sim[q][i.j])}`;
+    if (key === "marks") extra = `Probability of being inside a “${esc(L[b])}”: ${f2(D.boundary.inside[b][i.j])}`;
     if (key === "decide" && o.userData.ent) extra = `Part of “${esc(o.userData.ent.text)}” → ${esc(L[o.userData.ent.label])} (${f2(o.userData.ent.score)})`;
     return `<b>${esc(w.text)}</b><span>Word ${i.j + 1} of ${D.W}</span>${extra ? `<span>${extra}</span>` : ""}`;
   }
   if (i.type === "label") return `<b>${esc(L[i.q])}</b><span>${qDesc(D.queries[i.q])}. Click to follow it.</span>`;
   if (i.type === "choice") { const c = D.choices[i.ci]; return `<b>${esc(c.label)}</b><span>Label of the classification “${esc(c.task)}”. Its vector goes to the classification head.</span>`; }
   if (i.type === "gap") return `<b>Gap ${i.j}</b><span>${gapName(i.j)}</span>`;
-  if (i.type === "start") return `<b>Gap ${i.j} · starts</b><span>${gapName(i.j)}</span><span>Does a “${esc(L[q])}” start here? ${f2(D.boundary.start[q][i.j])}</span>`;
-  if (i.type === "end") return `<b>Gap ${i.j} · ends</b><span>${gapName(i.j)}</span><span>Does a “${esc(L[q])}” end here? ${f2(D.boundary.end[q][i.j])}</span>`;
-  if (i.type === "cand") { const c = D.candidates[i.ci]; return `<b>“${esc(c.text)}”</b><span>From gap ${c.s} to gap ${c.e}</span><span>Is it a “${esc(L[q])}”? ${f2(c.probs[q])}</span>`; }
+  if (i.type === "start") return `<b>Gap ${i.j} · starts</b><span>${gapName(i.j)}</span><span>Does a “${esc(L[b])}” start here? ${f2(D.boundary.start[b][i.j])}</span>`;
+  if (i.type === "end") return `<b>Gap ${i.j} · ends</b><span>${gapName(i.j)}</span><span>Does a “${esc(L[b])}” end here? ${f2(D.boundary.end[b][i.j])}</span>`;
+  if (i.type === "cand") { const c = D.candidates[i.ci]; return `<b>“${esc(c.text)}”</b><span>From gap ${c.s} to gap ${c.e}</span><span>Is it a “${esc(L[b])}”? ${f2(c.probs[b])}</span>`; }
+  if (i.type === "pair") { const r = i.r; return `<b>“${esc(r.head_text)}” → “${esc(r.tail_text)}”</b><span>${esc(r.type)} · probability ${f2(r.prob)}${r.kept ? " · kept" : ""}</span><span>Head role ${f2(r.head_prob)} · tail role ${f2(r.tail_prob)}</span>`; }
+  if (i.type === "inst") { const g = D.records[i.gi], inst = g.instances[i.k]; return `<b>“${esc(inst.text)}”</b><span>Possible ${esc(g.name)} record: ${f2(inst.prob)}</span><span>${inst.prob >= g.threshold ? "Kept" : `Dropped: below ${f2(g.threshold)}`}</span>`; }
+  if (i.type === "attr") { const a = D.attributes[i.ai]; return `<b>${esc(a.group)}: ${esc(a.labels[i.li])}</b><span>At “${esc(D.input.text.slice(i.item.start, i.item.end))}”: ${f2(i.item.probs[i.li])}</span>`; }
+  if (i.type === "clsv") { const c = D.choices[i.ci], t = D.classifications[c.ti]; return `<b>${esc(c.label)}</b><span>${esc(c.task)} · score ${f2(t.logits[c.j])} · probability ${f2(t.probs[c.j])}</span>${t.chosen.includes(c.j) ? "<span>Chosen</span>" : ""}`; }
   return "";
 }
 canvas.addEventListener("pointermove", (e) => {
@@ -912,8 +1141,9 @@ canvas.addEventListener("pointerup", (e) => {
   const o = pick(e);
   if (!o) return;
   const u = o.userData, i = u.info;
-  if (i?.type === "tok") { S.focusTok = i.k; const lab = D.tokens[i.k].label; if (lab != null) S.label = lab; updateHeights(); if (!u.map && u.p.idx === S.step && !S.overview) focusPlate(u.p); }
+  if (i?.type === "tok") { S.focusTok = i.k; const t = D.tokens[i.k]; if (t.label != null) S.label = t.label; else if (t.kind === "marker" && t.ci != null) S.label = D.Q + t.ci; updateHeights(); if (!u.map && u.p.idx === S.step && !S.overview) focusPlate(u.p); }
   if (i?.type === "label") return setLabel(i.q);
+  if (i?.type === "choice" || i?.type === "clsv") return setLabel(D.Q + i.ci);
   if (u.map) return renderPanel();
   const idx = u.kind === "plate" ? u.idx : u.p.idx;
   if (idx !== S.step || S.overview) selectStep(idx); else { renderPanel(); blip(520, 0.06, 0.016); }
@@ -987,7 +1217,11 @@ function renderStepper() {
 }
 
 // ---------- panel ----------
-const labChip = (q) => `<span class="lab" style="--c:${LC(q)}">${esc(D.input.labels[q])}</span>`;
+// one index for every question: span queries 0..Q-1, then classification choices
+const qColor = (q) => (q < D.Q ? LC(q) : C.cls);
+const qName = (q) => (q < D.Q ? D.input.labels[q] : `${D.choices[q - D.Q].task}: ${D.choices[q - D.Q].label}`);
+const sq = () => (S.label < D.Q ? S.label : 0); // span stages always show a span query
+const labChip = (q) => `<span class="lab" style="--c:${qColor(q)}">${esc(qName(q))}</span>`;
 const shortChip = (q) => `<span class="lab" style="--c:${LC(q)}">${esc(D.queries[q].short)}${D.queries[q].anchor ? " *" : ""}</span>`;
 const choiceChip = (ci) => `<span class="lab" style="--c:${C.cls}">${esc(D.choices[ci].label)}</span>`;
 const groupTitle = (g) => (g.kind === "entity" ? "entities" : `${g.name} · ${g.kind}`);
@@ -1028,8 +1262,9 @@ function highlighted(ents) {
 
 const CONTENT = {
   overview: {
-    what: () => `<p>This is <b>GLiNER2.5</b> from the inside. You write a schema (entity types, attributes, relations, a structure, classification labels) and the model answers all of it <b>in one pass</b>, even for things it never saw during training.</p>
+    what: () => `<p>This is <b>GLiNER2.5</b> from the inside. ${TASKS[S.task].intro}</p>
       <p>Each plate of the tower is a stage. Your sentence and your schema enter at the bottom and climb plate by plate. In between there are <b>${INFO.layers} Transformer layers</b>, where each piece of the text looks at the others to understand its context.</p>
+      ${S.task === "all" ? "" : `<div class="note">The tabs above the sentence switch task. The bottom of the tower is the same for every task; only the plates on top change.</div>`}
       <div class="note key">Press ▶ (below) to follow your sentence step by step, or pick a stage in the left column. Hover over any piece to see what it is.</div>
       <p>The small balls that travel between plates are information passing from one stage to the next.</p>`,
     mine: () => `<p>Result for your sentence:</p>${highlighted(D.entities)}${otherAnswers()}<p class="mono" style="margin-top:10px">${D.entities.length} entities · ${D.ms} ms of model time</p>`,
@@ -1077,7 +1312,7 @@ const CONTENT = {
       const L0 = D.layers[0], f = S.focusTok, t = D.tokens[f];
       const mk = D.tokens.flatMap((t, k) => (t.kind === "marker" && (t.label != null || t.ci != null) ? [k] : []));
       const same = [...new Set(mk.map((k) => D.tokens[k].piece))].filter((m) => { const ks = mk.filter((k) => D.tokens[k].piece === m); return ks.length > 1 && ks.every((k) => L0.strip[k].join() === L0.strip[ks[0]].join()); });
-      const show = [...new Set([f, ...D.markers, ...D.words.map((w) => w.token)])].slice(0, 14);
+      const show = [...new Set([f, ...D.qmarkers, ...D.words.map((w) => w.token)])].slice(0, 14);
       return `<p>Embedding of ${pc(t)} (the first 32 of ${INFO.hidden} numbers; terracotta = positive, slate = negative):</p>${strip(L0.strip[f])}
         ${same.length ? `<div class="note key">All ${same.map((m) => `<code>${m}</code>`).join(" and all ")} markers start with <b>exactly the same embedding</b>: they do not know yet which query they belong to. They find out by looking around in the next layers.</div>` : ""}
         <h3>More embeddings</h3><div class="strips">${show.map((k) => `<span>${pc(D.tokens[k])}${D.tokens[k].label != null ? " " + labChip(D.tokens[k].label) : ""}</span>${strip(L0.strip[k])}`).join("")}</div>
@@ -1104,7 +1339,7 @@ const CONTENT = {
         <p style="color:var(--muted);font-size:13px;margin-top:8px">It keeps ${f2(att[f])} of its attention for itself. Click another piece in the 3D view to switch.</p>
         <h3>How ${labChip(q)} looks at your sentence, layer by layer</h3>
         <table class="heat"><thead><tr><th></th>${cols.map((_, l) => `<th>${l + 1}</th>`).join("")}</tr></thead><tbody>
-        ${ws.map((w, j) => `<tr><th>${esc(w)}</th>${cols.map((c, l) => `<td class="${l + 1 === st.layer ? "cur" : ""}" style="background:${ramp(c[j], LC(q))}" title="layer ${l + 1}: ${f2(D.layers[l + 1].label_attn[q][j])}"></td>`).join("")}</tr>`).join("")}
+        ${ws.map((w, j) => `<tr><th>${esc(w)}</th>${cols.map((c, l) => `<td class="${l + 1 === st.layer ? "cur" : ""}" style="background:${ramp(c[j], qColor(q))}" title="layer ${l + 1}: ${f2(D.layers[l + 1].label_attn[q][j])}"></td>`).join("")}</tr>`).join("")}
         </tbody></table>
         <p>In layer ${st.layer}, ${labChip(q)} looks mostly at <b>“${esc(ws[nowBest])}”</b>. In the last layer, at <b>“${esc(ws[endBest])}”</b>.</p>`;
     },
@@ -1117,7 +1352,7 @@ const CONTENT = {
   pick: {
     what: () => `<p>After the ${INFO.layers} layers, the model goes back to <b>words</b>. Each word is represented by its <b>first piece</b> (the one with <code>▁</code>), which has already absorbed the context of the others.</p>
       <p>Each marker becomes a vector too, and there are two kinds:</p>
-      <ul><li><b>Span queries</b> (<code>[E]</code>, <code>[C]</code>, <code>[R]</code>) ask “where in the text is there a ${esc(D.queries[S.label].short)}?”. Entity types, attribute labels, relation roles and structure fields all ask this same kind of question, so they all go through the same next stages.</li>
+      <ul>${D.Q ? `<li><b>Span queries</b> (<code>[E]</code>, <code>[C]</code>, <code>[R]</code>) ask “where in the text is there a ${esc(D.queries[sq()].short)}?”. Entity types, attribute labels, relation roles and structure fields all ask this same kind of question, so they all go through the same next stages.</li>` : ""}
       ${D.choices.length ? `<li><b>Classification choices</b> (<code>[L]</code>) ask “does the whole text fit this label?”. They go to a small separate head.</li>` : ""}</ul>
       <p>The other pieces (word endings and the rest of the schema) have done their job and are dropped. In the 3D view, the balls that rise and fade are those pieces.</p>`,
     mine: () => {
@@ -1125,7 +1360,7 @@ const CONTENT = {
       return `<p>Word ← chosen piece:</p><div>${D.words.map((w) => `<span class="wordgroup">${pc(D.tokens[w.token])}<small>${esc(w.text)}</small></span>`).join("")}</div>
         <h3>Similarity between each query and each word</h3><p style="font-size:13px;color:var(--muted)">Cosine similarity after the last layer. It is only a hint: the next stages make the real decision.</p>
         <table class="heat"><thead><tr><th></th>${D.words.map((w) => `<th title="${esc(w.text)}">${esc(w.text.slice(0, 4))}</th>`).join("")}</tr></thead><tbody>
-        ${D.input.labels.map((l, q) => { const r = sim[q], mn = Math.min(...r), mx = Math.max(...r); return `<tr><th>${esc(l)}</th>${r.map((v, j) => `<td style="background:${ramp((v - mn) / (mx - mn || 1), LC(q))}" title="${esc(D.words[j].text)}: ${f2(v)}"></td>`).join("")}</tr>`; }).join("")}
+        ${sim.map((r, q) => { const mn = Math.min(...r), mx = Math.max(...r); return `<tr><th>${esc(qName(q))}</th>${r.map((v, j) => `<td style="background:${ramp((v - mn) / (mx - mn || 1), qColor(q))}" title="${esc(D.words[j].text)}: ${f2(v)}"></td>`).join("")}</tr>`; }).join("")}
         </tbody></table>`;
     },
     tech: () => `<dl class="tech"><dt>Pooling</dt><dd><code>token_pooling = "first"</code>: the model takes the vector of the first piece of each word.</dd>
@@ -1154,7 +1389,7 @@ const CONTENT = {
       <ul><li><b style="color:var(--terra)">Starts</b>: does an entity of this type start here?</li><li><b style="color:var(--slate)">Ends</b>: does it end here?</li><li><b style="color:var(--olive)">Inside</b>: is this word part of one?</li></ul>
       <p>In the 3D view: terracotta bars = starts, slate bars = ends, word height = inside. Switch the query above to see how they change.</p>`,
     mine: () => {
-      const q = S.label, B = D.boundary, s = argmax(B.start[q]), e = argmax(B.end[q]);
+      const q = sq(), B = D.boundary, s = argmax(B.start[q]), e = argmax(B.end[q]);
       const cell = (v, c) => `<td style="background:${ramp(v, c)}">${v >= 0.5 ? f2(v) : ""}</td>`;
       let head = "<tr><th></th>", r1 = "<tr><th>starts</th>", r2 = "<tr><th>inside</th>", r3 = "<tr><th>ends</th>";
       for (let j = 0; j <= D.W; j++) {
@@ -1186,8 +1421,8 @@ const CONTENT = {
   },
   score: {
     what: () => `<p>Each candidate becomes a vector that sums up <b>where it starts, where it ends, how long it is and what it contains</b>.</p>
-      <p>That vector is compared with each query, and out comes a probability from 0 to 1: is “${esc(D.candidates[0]?.text ?? "")}” a ${esc(D.input.labels[S.label])}? The starts, ends and inside scores from stage 7 are added to it.</p>
-      <p>In the 3D view, the higher the arc, the higher the probability for ${labChip(S.label)}. Thick arcs pass the threshold (${f2(D.input.threshold)}).</p>`,
+      <p>That vector is compared with each query, and out comes a probability from 0 to 1: is “${esc(D.candidates[0]?.text ?? "")}” a ${esc(D.input.labels[sq()])}? The starts, ends and inside scores from stage 7 are added to it.</p>
+      <p>In the 3D view, the higher the arc, the higher the probability for ${labChip(sq())}. Thick arcs pass the threshold (${f2(D.input.threshold)}).</p>`,
     mine: () => {
       const thr = D.input.threshold, top = D.candidates.slice(0, 12);
       return `<p>The 12 candidates with the highest score for any query:</p><div style="overflow-x:auto"><table class="heat"><thead><tr><th></th>${D.input.labels.map((l) => `<th style="font-family:var(--sans);font-size:11px">${esc(l)}</th>`).join("")}</tr></thead><tbody>
@@ -1221,6 +1456,88 @@ const CONTENT = {
       <dt>Positions</dt><dd>The start and end maps of each word translate gaps into character offsets.</dd>
       <dt>Code</dt><dd class="file">gliner2/models/boundary/engine.py · _decode_entities</dd></dl>`,
   },
+  attr: {
+    what: () => `<p>Attributes are <b>not extra entity types</b>. First the model decides the entities. Then, for each attribute group (for example <i>mood</i>), it scores every label of the group <b>at exactly the stretch of each entity</b>, with the same span scorer as before.</p>
+      <p>Within a group the scores become shares that add up to 1 (softmax) and the largest wins. In the form, <code>→ person</code> keeps a group away from other entity types.</p>
+      <div class="note">Why ask it this way? “happy” is not a stretch of text by itself, but the model can still tell how well “happy” fits the stretch “Alice” in this sentence.</div>`,
+    mine: () => D.attributes.map((a) => {
+      const hit = (it, v, li) => (a.multi_label ? v >= a.threshold : li === argmax(it.probs));
+      return `<h3>${esc(a.group)}${a.applies_to ? ` <span class="mono" style="font-size:12px;color:var(--muted)">→ ${a.applies_to.map(esc).join(", ")}</span>` : ""}</h3>
+        ${a.items.length ? `<table class="heat"><thead><tr><th></th>${a.labels.map((l) => `<th style="font-family:var(--sans);font-size:11px">${esc(l)}</th>`).join("")}</tr></thead><tbody>
+        ${a.items.map((it) => `<tr><th>“${esc(D.input.text.slice(it.start, it.end))}”</th>${it.probs.map((v, li) => `<td class="v ${hit(it, v, li) ? "hit" : ""}" style="background:${hit(it, v, li) ? LC(attrQ(a, a.labels[li])) : ramp(v * 0.8, LC(attrQ(a, a.labels[li])))}">${f2(v)}</td>`).join("")}</tr>`).join("")}
+        </tbody></table>` : "<p>No entity of the right type was found, so there is nothing to score.</p>"}`;
+    }).join(""),
+    tech: () => `<dl class="tech"><dt>Prompt</dt><dd>Each label enters the schema as an entity query written “group: label” (<code>qualify_labels=True</code>), so it gets its own <code>[E]</code> marker and goes through the span stages like any query. Only its scores at the decided entities count.</dd>
+      <dt>Scoring</dt><dd><code>score_explicit_spans</code> scores the decided spans for those queries, without the candidate pool. Logits ÷ pair temperature, then softmax per group (sigmoid with a 0.5 threshold if the group is multi-label).</dd>
+      <dt>Code</dt><dd class="file">gliner2/models/boundary/engine.py · _attach_entity_attributes</dd></dl>`,
+  },
+  relPairs: {
+    what: () => `<p>A relation links two stretches with a direction: a <b>head</b> (who or what) and a <b>tail</b> (to whom or what). In the schema, each relation type asked two span questions, one per role, and the span stages already scored every candidate for both.</p>
+      <p>Now the model keeps the head candidates and the tail candidates that score at least <b>${f2(INFO.relations.argument_threshold)}</b> (at most ${INFO.relations.heads} of each) and <b>pairs every head with every tail</b>, up to ${INFO.relations.pair_cap} pairs per relation type.</p>
+      <div class="note">Each thin arc joins a head candidate with a tail candidate, in the lane of its relation type. Paler arcs have weaker role scores.</div>`,
+    mine: () => D.input.schema.relations.map((t) => {
+      const ps = D.relations.filter((r) => r.type === t);
+      return `<h3>${esc(t)}</h3>${ps.length ? `<ul class="list">${ps.map((r) => `<li><span>“${esc(r.head_text)}” → “${esc(r.tail_text)}”</span><span class="num">${f2(r.head_prob)} / ${f2(r.tail_prob)}</span></li>`).join("")}</ul>` : `<p>No pair: no stretch reached ${f2(INFO.relations.argument_threshold)} for both roles.</p>`}`;
+    }).join("") + `<p style="font-size:13px;color:var(--muted);margin-top:8px">The two numbers are the head-role and tail-role scores from the scoring stage.</p>`,
+    tech: () => `<dl class="tech"><dt>TypedRelationPairGenerator</dt><dd><code>heads_per_relation = ${INFO.relations.heads}</code>, <code>tails_per_relation = ${INFO.relations.tails}</code>, <code>pair_cap = ${INFO.relations.pair_cap}</code>, <code>argument_threshold = ${INFO.relations.argument_threshold}</code>. A stretch is never paired with itself.</dd>
+      <dt>Code</dt><dd class="file">gliner2/models/boundary/relations.py · TypedRelationPairGenerator</dd></dl>`,
+  },
+  relDecide: {
+    what: () => `<p>A small scorer reads each pair as a whole: the head stretch, the tail stretch and the relation type (its head and tail query vectors joined, ${2 * INFO.hidden} numbers). It gives each pair a probability.</p>
+      <p>Pairs with a probability ≥ ${f2(D.input.threshold)} are kept and duplicates are merged. The thick arrows in the 3D view are the relations found; they point from the head to the tail.</p>
+      <div class="note">The two roles were scored separately. This step is what decides that this head goes with this tail.</div>`,
+    mine: () => {
+      const li = (r) => `<li><span><span class="lab" style="--c:${LC(relQ(r.type))}">${esc(r.type)}</span> “${esc(r.head_text)}” → “${esc(r.tail_text)}”</span><span class="num">${f2(r.prob)}${!r.kept && r.prob >= D.input.threshold ? " · duplicate" : ""}</span></li>`;
+      const kept = D.relations.filter((r) => r.kept), drop = D.relations.filter((r) => !r.kept);
+      return `<h3>Kept</h3><ul class="list">${kept.map(li).join("") || "<li>No pair passed the threshold.</li>"}</ul>
+        ${drop.length ? `<h3>Dropped: below ${f2(D.input.threshold)} or duplicate</h3><ul class="list">${drop.slice(0, 10).map(li).join("")}</ul>` : ""}`;
+    },
+    tech: () => `<dl class="tech"><dt>SparseRelationScorer</dt><dd>Biaffine content of the two spans plus the relation query (head ⊕ tail, ${2 * INFO.hidden} dims). Probability = sigmoid(logit ÷ relation temperature). Parameters: ${nf(INFO.params.relation_scorer)}.</dd>
+      <dt>Code</dt><dd class="file">gliner2/models/boundary/relations.py · SparseRelationScorer · engine.py · _decode_relations</dd></dl>`,
+  },
+  recInst: {
+    what: () => `<p>A structure keeps <b>which value belongs to which record</b>: “Alice bought apples and Bob bought oranges” holds two purchases, not one list of buyers and one list of items.</p>
+      <p>One field is the <b>anchor</b> (marked * in the form). Every candidate stretch for the anchor becomes a possible record, an <b>instance</b>. The record head decides how likely each instance is to be a real record; instances ≥ ${f2(D.input.threshold)} are kept.</p>`,
+    mine: () => D.records.map((g) => `<h3>${esc(g.name)} <span class="mono" style="font-size:12px;color:var(--muted)">anchor: ${esc(g.fields.find((f) => f.anchor)?.name ?? "")}</span></h3>
+      <ul class="list">${g.instances.map((inst) => `<li><span>“${esc(inst.text ?? "—")}”</span><span class="num">${f2(inst.prob)} · ${inst.prob >= g.threshold ? "kept" : "dropped"}</span></li>`).join("") || "<li>No instance.</li>"}</ul>`).join("")
+      + `<p style="font-size:13px;color:var(--muted);margin-top:8px">The list shows the 8 most likely instances.</p>`,
+    tech: () => `<dl class="tech"><dt>RecordHead</dt><dd>Mode <code>natural</code>: one instance per anchor candidate. Record states of ${INFO.records.dim} numbers. Probability = sigmoid(logit ÷ record temperature). Parameters: ${nf(INFO.params.record_decoder)}.</dd>
+      <dt>Code</dt><dd class="file">gliner2/models/boundary/records.py · RecordHead · decode_group</dd></dl>`,
+  },
+  recFields: {
+    what: () => `<p>Each kept instance now fills its other fields. For every field it compares the candidate stretches <b>and an explicit “absent” option</b>, so a record can leave a field empty instead of taking a wrong value.</p>
+      <p>A single-value field uses a softmax over “absent” plus the candidates; a list field uses one sigmoid per candidate. The anchor field is the instance itself. The arcs in the 3D view join each anchor to its values.</p>`,
+    mine: () => D.records.map((g) => {
+      const kept = g.instances.filter((inst) => inst.prob >= g.threshold), th = (t) => `<th style="font-family:var(--sans);font-size:11px">${t}</th>`;
+      return `<h3>${esc(g.name)}</h3>${kept.map((inst) => `<p style="margin:10px 0 4px"><b>Instance “${esc(inst.text)}”</b></p>
+        <table class="heat"><thead><tr><th></th>${th("best value")}${th("p")}${th("absent")}</tr></thead><tbody>
+        ${g.fields.map((f, fi) => { const c = inst.fields[fi].cands[0]; return f.anchor
+          ? `<tr><th>${esc(f.name)} *</th><td colspan="3" style="width:auto;font-size:12px;padding:0 6px">the instance itself</td></tr>`
+          : `<tr><th>${esc(f.name)}</th><td style="width:auto;font-size:12px;padding:0 6px">${c ? `“${esc(c.text)}”` : "—"}</td><td class="v">${c ? f2(c.prob) : ""}</td><td class="v">${inst.fields[fi].absent != null ? f2(inst.fields[fi].absent) : "—"}</td></tr>`; }).join("")}
+        </tbody></table>`).join("") || "<p>No instance was kept.</p>"}
+        <h3>Result</h3><ul class="list">${g.result.map((rec) => `<li><span>${Object.entries(rec).map(([k, v]) => `${esc(k)}: “${esc(one(v)?.text ?? "—")}”`).join(", ")}</span></li>`).join("") || "<li>No record.</li>"}</ul>`;
+    }).join(""),
+    tech: () => `<dl class="tech"><dt>Assignment</dt><dd><code>assign_logits[f]</code> has shape <code>[instances, 1 + candidates]</code>; column 0 is ABSENT. Exclusive fields are solved jointly (Hungarian assignment), so two records never take the same value.</dd>
+      <dt>Code</dt><dd class="file">gliner2/models/boundary/records.py · decode_group</dd></dl>`,
+  },
+  clsScore: {
+    what: () => `<p>Classification does not cut the text into stretches. Each <code>[L]</code> label marker has read the whole sentence during the ${INFO.layers} layers, so its vector already sums up how the text relates to that label.</p>
+      <p>A small network shared by every label (MLP ${INFO.hidden} → ${2 * INFO.hidden} → 1) turns each vector into <b>one number</b>, its score. Higher means a better fit. Bars for positive scores are solid; pale bars are negative scores.</p>`,
+    mine: () => D.classifications.map((c, ti) => `<h3>${esc(c.task)}</h3><ul class="list">${c.labels.map((l, j) => `<li><span>${choiceChip(D.choices.findIndex((x) => x.ti === ti && x.j === j))}</span><span class="num">${f2(c.logits[j])}</span></li>`).join("")}</ul>`).join(""),
+    tech: () => `<dl class="tech"><dt>Classifier</dt><dd>MLP ${INFO.hidden} → ${2 * INFO.hidden} → 1 with ReLU, ${nf(INFO.params.classifier)} parameters, shared by every classification task. Logits ÷ classification temperature.</dd>
+      <dt>Code</dt><dd class="file">gliner2/inference/runtime.py · _extract_classification_result</dd></dl>`,
+  },
+  clsDecide: {
+    what: () => `<p>For a single-label task, a <b>softmax</b> turns the scores into shares that add up to 1, and the largest wins. For a multi-label task, each label gets its own <b>sigmoid</b> and passes if it reaches 0.50; if none does, the best one is kept.</p>`,
+    mine: () => D.classifications.map((c) => `<h3>${esc(c.task)} → ${c.chosen.map((j) => esc(c.labels[j])).join(", ")}</h3>${bars(c.labels.map((l, j) => [c.chosen.includes(j) ? `<b>${esc(l)}</b>` : esc(l), c.probs[j]]))}`).join(""),
+    tech: () => `<dl class="tech"><dt>Activation</dt><dd><code>class_act = "auto"</code>: softmax for single-label tasks, sigmoid for multi-label tasks, with <code>cls_threshold = 0.5</code>.</dd>
+      <dt>Constraints</dt><dd>This view decodes each task on its own. GLiNER2's <code>Classifier</code> can also enforce rules between tasks (implies, excludes) with exact or beam search.</dd></dl>`,
+  },
+  result: {
+    what: () => `<p>Everything the schema asked for, from <b>one pass</b> of the encoder: entities with their attributes, relations, records and labels. Every head read the same ${INFO.hidden}-number vectors from the same ${INFO.layers} layers.</p>`,
+    mine: () => `${highlighted(D.entities)}${otherAnswers()}`,
+    tech: () => `<p>The JSON that <code>model.extract()</code> returned:</p><pre class="json">${esc(JSON.stringify(D.result, null, 1))}</pre>`,
+  },
   map: {
     what: () => `<p>Each point is a piece of your input. Its ${INFO.hidden} numbers cannot be drawn, so we sum them up in 3 (principal component analysis). <b>Nearby pieces = similar representations.</b></p>
       <p>Move the layer slider or press ▶. In the embeddings (layer 0), markers of the same kind (all <code>[E]</code>, all <code>[R]</code>…) sit on the same point, because they do not know yet which query they belong to. Layer by layer they move apart, and the text reorganizes by its role in the sentence.</p>
@@ -1228,7 +1545,7 @@ const CONTENT = {
     mine: () => {
       const L = D.layers[S.mapLayer];
       return `<p>In ${S.mapLayer === 0 ? "the embeddings (layer 0)" : `layer ${S.mapLayer}`}, each query is most similar to:</p>
-        <ul class="list">${D.input.labels.map((l, q) => { const j = argmax(L.label_sim[q]); return `<li><span>${labChip(q)} → “${esc(D.words[j].text)}”</span><span class="num">${f2(L.label_sim[q][j])}</span></li>`; }).join("")}</ul>
+        <ul class="list">${L.label_sim.map((_, q) => { const j = argmax(L.label_sim[q]); return `<li><span>${labChip(q)} → “${esc(D.words[j].text)}”</span><span class="num">${f2(L.label_sim[q][j])}</span></li>`; }).join("")}</ul>
         ${S.mapLayer === 0 ? `<p style="font-size:13px;color:var(--muted);margin-top:8px">In layer 0, queries with the same kind of marker give the same answer: their markers are identical.</p>` : ""}`;
     },
     tech: () => `<dl class="tech"><dt>Projection</dt><dd>3D PCA of each layer's normalized vectors, aligned with the previous layer (Procrustes) so the points move smoothly.</dd>
@@ -1241,17 +1558,21 @@ function techModel() {
     <dt>Size</dt><dd>${nf(P.total)} parameters: embeddings ${pctOf(P.embeddings, P.total)}%, Transformer layers ${pctOf(P.encoder - P.embeddings, P.total)}%, boundary head ${((100 * (P.boundary_encoder + P.query_head + P.pool + P.scorer)) / P.total).toFixed(1)}%.</dd>
     <dt>Encoder</dt><dd>${INFO.layers} layers, ${INFO.hidden} dimensions, ${INFO.heads} attention heads.</dd>
     <dt>Head</dt><dd>Gaps of ${INFO.boundary_dim} dims · bag of top-${INFO.pool_top_k} × top-${INFO.pool_top_k}, at most ${INFO.pool_size} candidates.</dd>
-    <dt>Not drawn yet</dt><dd>The tower follows the span path that entity types, attribute labels, relation roles and structure fields share. The classification, attribute, relation and record heads on top of it are summed up in “With your sentence”.</dd></dl>`;
+    <dt>Heads</dt><dd>Span path (gaps, marks, pool, scorer) ${nf(P.boundary_encoder + P.query_head + P.pool + P.scorer)} · classifier ${nf(P.classifier)} · relation scorer ${nf(P.relation_scorer)} · record head ${nf(P.record_decoder)} parameters. They all read the same encoder output.</dd></dl>`;
 }
 function renderPanel() {
   if (!INFO) return;
-  $("#follow").innerHTML = D ? `<span>Following:</span>${D.groups.filter((g) => g.q.length).map((g) => `<span class="fg"><small>${esc(groupTitle(g))}</small>${g.q.map((q) => `<button type="button" class="lab ${q === S.label ? "on" : ""}" style="--c:${LC(q)}" data-q="${q}">${esc(D.queries[q].short)}</button>`).join("")}</span>`).join("")}` : "";
+  // span plates offer span queries, classification plates offer choices, the trunk offers both
+  const fk = !D || S.view === "map" || S.overview ? null : STEPS[S.step].key;
+  const chip = (q, name) => `<button type="button" class="lab ${q === S.label ? "on" : ""}" style="--c:${qColor(q)}" data-q="${q}">${esc(name)}</button>`;
+  $("#follow").innerHTML = D ? `<span>Following:</span>${D.groups.filter((g) => (g.q.length && !CLSLIKE.has(fk)) || (g.c.length && !SPANLIKE.has(fk)))
+    .map((g) => `<span class="fg"><small>${esc(groupTitle(g))}</small>${g.q.map((q) => chip(q, D.queries[q].short)).join("")}${g.c.map((ci) => chip(D.Q + ci, D.choices[ci].label)).join("")}</span>`).join("")}` : "";
   if (!D) return;
   const key = S.view === "map" ? "map" : S.overview ? "overview" : STEPS[S.step].key;
   const st = STEPS[S.step], g = GROUPS[st.g];
   $("#kicker").textContent = S.view === "map" ? "Alternative view" : S.overview ? `${STEPS.length} steps · ${GROUPS.length} stages` : `Step ${S.step + 1} of ${STEPS.length}`;
   $("#ptitle").textContent = S.view === "map" ? "Meaning map" : S.overview ? "A sentence travels through the model" : stepTitle(st) + (st.key === "layer" ? " · Transformer" : "");
-  $("#plede").textContent = S.view === "map" ? "Where the model places each piece, layer by layer." : S.overview ? "From your text and schema to the answers, in ten stages." : g.short;
+  $("#plede").textContent = S.view === "map" ? "Where the model places each piece, layer by layer." : S.overview ? `From your text and schema to the answers, in ${GROUPS.length} stages.` : g.short;
   document.querySelectorAll("[role=tab]").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === S.tab));
   $("#tabbody").innerHTML = CONTENT[key][S.tab](st);
 }
@@ -1284,7 +1605,8 @@ function prep(d) {
       t.lab = named ? cur.lab ?? null : null; t.ci = named ? cur.ci ?? null : null; t.desc = !!(named && cur.desc);
     } else t.lab = null;
   });
-  d.W = d.words.length; d.Q = d.input.labels.length; d.T = d.tokens.length;
+  d.W = d.words.length; d.Q = d.input.labels.length; d.T = d.tokens.length; d.N = d.Q + d.choices.length;
+  d.qmarkers = [...d.markers, ...d.classifications.flatMap((c) => c.tokens)];
   d.candidates.forEach((c) => (c.final = d.entities.filter((e) => e.start === c.cs && e.end === c.ce).map((e) => e.label)));
   const up = /[A-ZÁÉÍÓÚÑÜ]/;
   d.lower = up.test(d.input.text) && !d.tokens.some((t) => t.kind === "text" && up.test(t.piece));
@@ -1292,27 +1614,28 @@ function prep(d) {
 // Plain form syntax -> /api/analyze schema. Commas separate items, ";" separates groups, ":" names a group.
 function parseSchema() {
   const list = (s) => s.split(",").map((x) => x.trim()).filter(Boolean);
-  const groups = (sel, what) => $(sel).value.split(";").map((x) => x.trim()).filter(Boolean).map((g) => {
+  const on = (k) => TASKS[S.task].fields.includes(k), val = (k) => (on(k) ? $(FIELDS[k]).value : "");
+  const groups = (k, what) => val(k).split(";").map((x) => x.trim()).filter(Boolean).map((g) => {
     const i = g.indexOf(":");
     if (i < 1) throw new Error(`Write ${what} as “name: a, b, c”.`);
     return [g.slice(0, i).trim(), g.slice(i + 1).trim()];
   });
-  const entities = Object.fromEntries(list($("#fEnt").value).map((e) => { const [n, d] = e.split("="); return [n.trim(), d?.trim() || null]; }));
-  const attributes = Object.fromEntries(groups("#fAttr", "attributes").map(([g, rest]) => { const [labels, to] = rest.split(/→|->/); return [g, { labels: list(labels), applies_to: to ? list(to) : null }]; }));
-  const classifications = Object.fromEntries(groups("#fCls", "classifications").map(([t, rest]) => [t, list(rest)]));
-  const structures = Object.fromEntries(groups("#fStr", "structures").map(([n, rest]) => {
+  const entities = Object.fromEntries(list(val("ent")).map((e) => { const [n, d] = e.split("="); return [n.trim(), d?.trim() || null]; }));
+  const attributes = Object.fromEntries(groups("attr", "attributes").map(([g, rest]) => { const [labels, to] = rest.split(/→|->/); return [g, { labels: list(labels), applies_to: to ? list(to) : null }]; }));
+  const classifications = Object.fromEntries(groups("cls", "classifications").map(([t, rest]) => [t, list(rest)]));
+  const structures = Object.fromEntries(groups("str", "structures").map(([n, rest]) => {
     const fields = list(rest), anchor = fields.find((f) => f.endsWith("*"));
     return [n, { fields: fields.map((f) => f.replace(/\*$/, "").trim()), anchor: anchor ? anchor.replace(/\*$/, "").trim() : null }];
   }));
-  return { entities, attributes, classifications, relations: list($("#fRel").value), structures };
+  return { entities, attributes, classifications, relations: list(val("rel")), structures };
 }
 const fill = (x) => { $("#text").value = x.text; Object.entries(FIELDS).forEach(([k, sel]) => ($(sel).value = x[k] ?? "")); };
 function toast(msg) { const t = $("#toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => (t.style.display = "none"), 5000); }
 async function analyze() {
   let schema;
   try { schema = parseSchema(); } catch (e) { return toast(e.message); }
-  if (!Object.keys(schema.entities).length && !schema.relations.length && !Object.keys(schema.structures).length)
-    return toast("Add at least one entity type, relation or structure: the walkthrough follows the span path.");
+  if (!Object.keys(schema.entities).length && !schema.relations.length && !Object.keys(schema.structures).length && !Object.keys(schema.classifications).length)
+    return toast("Fill in the fields of this task first.");
   const body = { text: $("#text").value, threshold: +$("#thr").value, ...schema };
   $("#go").disabled = true; $("#busy").classList.add("on"); stopPlay();
   try {
@@ -1321,7 +1644,8 @@ async function analyze() {
     if (!r.ok) throw new Error(j.error || r.statusText);
     const first = !D;
     prep(j); D = j;
-    S.label = 0; S.focusTok = D.markers[0]; S.mapLayer = first ? 0 : S.mapLayer;
+    S.label = 0; S.focusTok = D.qmarkers[0]; S.mapLayer = first ? 0 : S.mapLayer;
+    GROUPS = groupsFor(D); buildSteps(INFO.layers); S.step = Math.min(S.step, STEPS.length - 1);
     buildTower(); buildMap(); updateHeights();
     $("#status").textContent = `${INFO.name} · ${D.ms} ms`;
     if (first || S.overview) overview(); else selectStep(S.step);
@@ -1335,11 +1659,22 @@ async function analyze() {
 // ---------- wiring ----------
 $("#form").addEventListener("submit", (e) => { e.preventDefault(); analyze(); });
 $("#thr").addEventListener("input", (e) => ($("#thrOut").textContent = f2(e.target.value)));
-EXAMPLES.forEach((x) => {
-  const b = document.createElement("button");
-  b.type = "button"; b.textContent = x.name;
-  b.onclick = () => { fill(x); analyze(); };
-  $("#status").before(b);
+function renderTasks() {
+  $("#taskbar").innerHTML = Object.entries(TASKS).map(([k, t]) => `<button type="button" data-task="${k}" class="${k === S.task ? "on" : ""}" aria-pressed="${k === S.task}">${t.title}</button>`).join("");
+  document.querySelectorAll(".tasks .field").forEach((f) => (f.hidden = !TASKS[S.task].fields.includes(f.dataset.f)));
+  $("#examples").querySelectorAll("button").forEach((b) => b.remove());
+  EXAMPLES[S.task].forEach((x) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = x.name;
+    b.onclick = () => { fill(x); analyze(); };
+    $("#status").before(b);
+  });
+}
+$("#taskbar").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-task]");
+  if (!b || b.dataset.task === S.task) return;
+  S.task = b.dataset.task; S.overview = true; S.step = 0;
+  renderTasks(); fill(EXAMPLES[S.task][0]); analyze(); blip(600, 0.05, 0.012);
 });
 $("#prev").onclick = () => { stopPlay(); S.overview ? selectStep(0) : selectStep(S.step - 1); };
 $("#next").onclick = () => { stopPlay(); S.overview ? selectStep(0) : selectStep(S.step + 1, { flow: true }); };
@@ -1375,10 +1710,10 @@ addEventListener("keydown", (e) => {
     $("#tabbody").innerHTML = `<p>Start the server from this folder:</p><p><code>uv run server.py</code></p><p>and open <code>http://localhost:8765</code>.</p>`;
     return;
   }
-  buildSteps(INFO.layers);
+  GROUPS = groupsFor(null); buildSteps(INFO.layers);
   $("#mapLayer").max = INFO.layers;
-  renderRail();
-  fill(EXAMPLES[0]);
+  renderTasks(); renderRail();
+  fill(EXAMPLES[S.task][0]);
   analyze();
 })();
 </script>
