@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GLiNER2.5 por dentro</title>
+<title>Inside GLiNER2.5</title>
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -70,7 +70,7 @@ main { display: grid; grid-template-columns: 236px 1fr 430px; min-height: 0; }
 #stepLabel b { color: var(--ink); font-weight: 600; }
 #mapCtl { display: none; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); padding: 0 6px; }
 #mapCtl input[type=range] { width: 220px; accent-color: var(--terra); }
-#mapCtl output { font: 500 13px var(--mono); color: var(--ink); width: 64px; }
+#mapCtl output { font: 500 13px var(--mono); color: var(--ink); width: 86px; }
 #mapCtl label { display: inline-flex; gap: 5px; align-items: center; }
 #busy { position: absolute; inset: 0; display: none; place-items: center; background: rgba(243, 238, 229, .72); font: 500 italic 20px var(--serif); color: var(--muted); }
 #busy.on { display: grid; }
@@ -178,56 +178,56 @@ dl.legend dd { margin: 0; color: var(--muted); }
 <body>
 <header>
   <div class="brand">
-    <h1>GLiNER2.5, por dentro</h1>
-    <p>Sigue una frase a través del modelo, capa a capa, hasta que encuentra las entidades.</p>
+    <h1>Inside GLiNER2.5</h1>
+    <p>Follow a sentence through the model, layer by layer, until it finds the entities.</p>
   </div>
   <form id="form">
-    <div class="field"><label for="text">Tu frase</label><input id="text" type="text" autocomplete="off" spellcheck="false"></div>
-    <div class="field"><label for="labels">Qué buscar (separado por comas)</label><input id="labels" type="text" autocomplete="off" spellcheck="false"></div>
-    <div class="field"><label for="thr">Umbral</label><div class="thr"><input id="thr" type="range" min="0.05" max="0.95" step="0.05" value="0.5"><output id="thrOut">0.50</output></div></div>
-    <button class="primary" id="go" type="submit">Analizar</button>
-    <div class="sub" id="examples"><span>Ejemplos:</span><span id="status"></span></div>
+    <div class="field"><label for="text">Your sentence</label><input id="text" type="text" autocomplete="off" spellcheck="false"></div>
+    <div class="field"><label for="labels">What to find (comma-separated)</label><input id="labels" type="text" autocomplete="off" spellcheck="false"></div>
+    <div class="field"><label for="thr">Threshold</label><div class="thr"><input id="thr" type="range" min="0.05" max="0.95" step="0.05" value="0.5"><output id="thrOut">0.50</output></div></div>
+    <button class="primary" id="go" type="submit">Analyze</button>
+    <div class="sub" id="examples"><span>Examples:</span><span id="status"></span></div>
   </form>
 </header>
 <main>
-  <nav id="rail" aria-label="Etapas del modelo"></nav>
+  <nav id="rail" aria-label="Model stages"></nav>
   <section id="stage">
-    <canvas id="scene" aria-label="Modelo en 3D"></canvas>
+    <canvas id="scene" aria-label="3D model"></canvas>
     <div class="hud tl">
-      <div class="seg" role="group" aria-label="Vista">
-        <button id="vFlow" class="on" type="button">Recorrido</button>
-        <button id="vMap" type="button">Mapa de significados</button>
+      <div class="seg" role="group" aria-label="View">
+        <button id="vFlow" class="on" type="button">Walkthrough</button>
+        <button id="vMap" type="button">Meaning map</button>
       </div>
     </div>
     <div class="hud tr">
-      <button class="ghost" id="overview" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4"/></svg>Vista completa</button>
-      <button class="ghost" id="sound" type="button" aria-pressed="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6h3l4-3v10l-4-3H2z"/><path id="waves" d="M11.5 5.5a3.5 3.5 0 0 1 0 5" opacity=".25"/></svg><span>Sonido: no</span></button>
+      <button class="ghost" id="overview" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4"/></svg>Full view</button>
+      <button class="ghost" id="sound" type="button" aria-pressed="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6h3l4-3v10l-4-3H2z"/><path id="waves" d="M11.5 5.5a3.5 3.5 0 0 1 0 5" opacity=".25"/></svg><span>Sound: off</span></button>
     </div>
     <div class="hud bc">
       <div id="flowCtl" style="display:flex;align-items:center;gap:2px">
-        <button class="icon" id="prev" type="button" aria-label="Paso anterior"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.5 3 5 8l5.5 5z"/></svg></button>
-        <button class="icon play" id="play" type="button" aria-label="Recorrer el modelo"><svg viewBox="0 0 16 16" fill="currentColor"><path id="playIcon" d="M5 3v10l8-5z"/></svg></button>
-        <button class="icon" id="next" type="button" aria-label="Paso siguiente"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 3 11 8l-5.5 5z"/></svg></button>
+        <button class="icon" id="prev" type="button" aria-label="Previous step"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.5 3 5 8l5.5 5z"/></svg></button>
+        <button class="icon play" id="play" type="button" aria-label="Walk through the model"><svg viewBox="0 0 16 16" fill="currentColor"><path id="playIcon" d="M5 3v10l8-5z"/></svg></button>
+        <button class="icon" id="next" type="button" aria-label="Next step"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 3 11 8l-5.5 5z"/></svg></button>
         <div id="stepLabel"></div>
       </div>
       <div id="mapCtl">
-        <button class="icon play" id="mapPlay" type="button" aria-label="Recorrer las capas"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 3v10l8-5z"/></svg></button>
-        <span>Capa</span><input id="mapLayer" type="range" min="0" max="12" step="1" value="0"><output id="mapLayerOut">0</output>
-        <label><input type="checkbox" id="trails"> trayectorias</label>
+        <button class="icon play" id="mapPlay" type="button" aria-label="Play through the layers"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 3v10l8-5z"/></svg></button>
+        <span>Layer</span><input id="mapLayer" type="range" min="0" max="12" step="1" value="0"><output id="mapLayerOut">0</output>
+        <label><input type="checkbox" id="trails"> trails</label>
       </div>
     </div>
-    <div id="hint">Pulsa ▶ para seguir tu frase. Arrastra para girar, clic derecho para desplazar, rueda para acercar.</div>
-    <div id="busy">Pasando la frase por el modelo…</div>
+    <div id="hint">Press ▶ to follow your sentence. Drag to rotate, right-click to pan, scroll to zoom.</div>
+    <div id="busy">Running your sentence through the model…</div>
   </section>
   <aside id="panel" aria-live="polite">
     <div class="follow" id="follow"></div>
     <div class="kicker" id="kicker"></div>
-    <h2 id="ptitle">Cargando el modelo…</h2>
+    <h2 id="ptitle">Loading the model…</h2>
     <p class="lede" id="plede"></p>
     <div role="tablist" id="tabs">
-      <button role="tab" data-tab="what" aria-selected="true">Qué hace</button>
-      <button role="tab" data-tab="mine" aria-selected="false">Con tu frase</button>
-      <button role="tab" data-tab="tech" aria-selected="false">Por dentro</button>
+      <button role="tab" data-tab="what" aria-selected="true">What it does</button>
+      <button role="tab" data-tab="mine" aria-selected="false">With your sentence</button>
+      <button role="tab" data-tab="tech" aria-selected="false">Under the hood</button>
     </div>
     <div id="tabbody" role="tabpanel"></div>
   </aside>
@@ -245,7 +245,7 @@ const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const f2 = (v) => Number(v).toFixed(2);
-const nf = (n) => Number(n).toLocaleString("es-ES");
+const nf = (n) => Number(n).toLocaleString("en-US");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const argmax = (a) => a.reduce((b, v, i) => (v > a[b] ? i : b), 0);
 const C = { bg: "#F3EEE5", paper: "#FBF8F2", wash: "#F7F1E7", plate: "#E8DFCE", ink: "#2B2926", muted: "#6E685F",
@@ -262,23 +262,24 @@ const S = { step: 0, overview: true, label: 0, focusTok: 0, view: "flow", tab: "
 let INFO = null, D = null, STEPS = [], plates = [];
 
 const EXAMPLES = [
-  { name: "Empresa y ciudad", text: "María García trabaja en Telefónica en Madrid desde 2019.", labels: "persona, empresa, ciudad, fecha" },
-  { name: "Historia clínica", text: "El paciente Juan Pérez, de 54 años, ingresó en el Hospital La Paz el 3 de marzo con neumonía.", labels: "persona, edad, hospital, fecha, enfermedad" },
-  { name: "Transferencia", text: "Ana López envió 1.200 euros a la cuenta ES91 2100 0418 4502 0005 1332 el lunes.", labels: "persona, cantidad de dinero, número de cuenta, fecha" },
-  { name: "Palabra ambigua", text: "Me senté en un banco del parque antes de ir al Banco de España.", labels: "lugar, organización, mueble" },
+  { name: "Company and city", text: "Maria Garcia has worked at Telefónica in Madrid since 2019.", labels: "person, company, city, date" },
+  { name: "Medical record", text: "Patient John Smith, aged 54, was admitted to St Mary's Hospital on 3 March with pneumonia.", labels: "person, age, hospital, date, disease" },
+  { name: "Bank transfer", text: "Anna Lopez sent 1,200 euros to account ES91 2100 0418 4502 0005 1332 on Monday.", labels: "person, amount of money, account number, date" },
+  { name: "Ambiguous word", text: "We had a picnic on the river bank, then walked to the Bank of England.", labels: "location, organization" },
+  { name: "In Spanish", text: "María García trabaja en Telefónica en Madrid desde 2019.", labels: "person, company, city, date" },
 ];
 
 const GROUPS = [
-  { key: "input", title: "Texto y etiquetas", short: "Tu frase y la lista de cosas que quieres encontrar." },
-  { key: "tokens", title: "Tokenizador", short: "Corta el texto en piezas que el modelo conoce." },
-  { key: "embed", title: "Fichas (embeddings)", short: "Cada pieza se cambia por una lista de números." },
-  { key: "layer", title: "Transformer", short: "Cada pieza mira a las demás y se actualiza." },
-  { key: "pick", title: "Representantes", short: "Un vector por palabra y otro por etiqueta." },
-  { key: "gaps", title: "Huecos entre palabras", short: "Una entidad empieza en un hueco y acaba en otro." },
-  { key: "marks", title: "¿Empieza? ¿Acaba?", short: "Cada etiqueta puntúa cada hueco y cada palabra." },
-  { key: "pool", title: "Candidatos", short: "Combina los inicios y finales más prometedores." },
-  { key: "score", title: "Puntuación", short: "Cada candidato recibe una nota por etiqueta." },
-  { key: "decide", title: "Decisión", short: "Umbral, solapes y respuesta final." },
+  { key: "input", title: "Text and labels", short: "Your sentence and the list of things you want to find." },
+  { key: "tokens", title: "Tokenizer", short: "Cuts the text into pieces the model knows." },
+  { key: "embed", title: "Embeddings", short: "Each piece is swapped for a list of numbers." },
+  { key: "layer", title: "Transformer", short: "Each piece looks at the others and updates itself." },
+  { key: "pick", title: "Word and label vectors", short: "One vector per word and one per label." },
+  { key: "gaps", title: "Gaps between words", short: "An entity starts at one gap and ends at another." },
+  { key: "marks", title: "Starts? Ends?", short: "Each label scores every gap and every word." },
+  { key: "pool", title: "Candidates", short: "Combines the most promising starts and ends." },
+  { key: "score", title: "Scoring", short: "Each candidate gets a score per label." },
+  { key: "decide", title: "Decision", short: "Threshold, overlaps and final answer." },
 ];
 function buildSteps(n) {
   STEPS = [];
@@ -287,7 +288,7 @@ function buildSteps(n) {
     else STEPS.push({ key: g.key, g: gi, layer: g.key === "embed" ? 0 : null });
   });
 }
-const stepTitle = (st) => (st.key === "layer" ? `Capa ${st.layer} de ${INFO.layers}` : GROUPS[st.g].title);
+const stepTitle = (st) => (st.key === "layer" ? `Layer ${st.layer} of ${INFO.layers}` : GROUPS[st.g].title);
 
 // ---------- sound (muted by default) ----------
 let AC = null;
@@ -477,8 +478,8 @@ const BUILD = {
       p.anch.end[j] = addTile(p, x, -0.4, 0.18, 0.28, 0.1, C.slate, { type: "end", j });
     });
     const lx = WL.gx[0] - 0.35;
-    const t1 = flatText(p.labels, "empieza", 0, 0.05, 0.26, null, C.terra);
-    const t2 = flatText(p.labels, "acaba", 0, -0.4, 0.26, null, C.slate);
+    const t1 = flatText(p.labels, "starts", 0, 0.05, 0.26, null, C.terra);
+    const t2 = flatText(p.labels, "ends", 0, -0.4, 0.26, null, C.slate);
     [t1, t2].forEach((t) => { t.geometry.computeBoundingBox(); t.position.x = lx - t.geometry.boundingBox.max.x; });
     return p;
   },
@@ -760,7 +761,7 @@ function mapTarget(k) { return new THREE.Vector3(...D.layers[S.mapLayer].pos[k])
 function mapRefresh() {
   mapTrails.forEach((t) => (t.visible = $("#trails").checked));
   $("#mapLayer").value = S.mapLayer;
-  $("#mapLayerOut").textContent = S.mapLayer === 0 ? "fichas" : `${S.mapLayer} / ${INFO.layers}`;
+  $("#mapLayerOut").textContent = S.mapLayer === 0 ? "embeddings" : `${S.mapLayer} / ${INFO.layers}`;
   if (S.view === "map") renderPanel();
 }
 function stepMap() {
@@ -807,31 +808,30 @@ function pick(e) {
 }
 function tipHTML(o) {
   const u = o.userData;
-  if (u.kind === "plate") { const st = STEPS[u.idx]; return `<b>${esc(stepTitle(st))}</b><span>${esc(GROUPS[st.g].short)}</span><span>Pulsa para verla de cerca.</span>`; }
+  if (u.kind === "plate") { const st = STEPS[u.idx]; return `<b>${esc(stepTitle(st))}</b><span>${esc(GROUPS[st.g].short)}</span><span>Click to see it up close.</span>`; }
   const i = u.info, q = S.label, L = D.input.labels;
-  const kindName = (t) => t.kind === "text" ? (t.first ? "Primera pieza de una palabra" : "Pieza de texto (continúa la palabra)") : t.kind === "marker" ? (t.label != null ? `Marcador de la etiqueta «${L[t.label]}»` : "Marcador especial") : t.lab != null ? `Nombre de la etiqueta «${L[t.lab]}»` : "Parte del esquema";
+  const kindName = (t) => t.kind === "text" ? (t.first ? "First piece of a word" : "Text piece (continues the word)") : t.kind === "marker" ? (t.label != null ? `Marker for the label “${esc(L[t.label])}”` : "Special marker") : t.lab != null ? `Name of the label “${esc(L[t.lab])}”` : "Part of the schema";
   if (i.type === "tok") {
     const t = D.tokens[i.k], st = u.p?.step;
     let extra = "";
-    if (st?.key === "layer") extra = i.k === S.focusTok ? "Pieza seleccionada: las alturas muestran a quién mira." : `«${esc(D.tokens[S.focusTok].piece)}» la mira con ${f2(D.layers[st.layer].attn[S.focusTok][i.k])}`;
-    if (u.map) extra = `Capa ${S.mapLayer}. Los puntos cercanos tienen representaciones parecidas.`;
-    return `<b><code>${esc(t.piece)}</code></b><span>${kindName(t)} · id ${t.id}</span>${extra ? `<span>${extra}</span>` : ""}<span>Pulsa para seleccionarla.</span>`;
+    if (st?.key === "layer") extra = i.k === S.focusTok ? "Selected piece: the heights show what it looks at." : `“${esc(D.tokens[S.focusTok].piece)}” looks at it with ${f2(D.layers[st.layer].attn[S.focusTok][i.k])}`;
+    if (u.map) extra = `Layer ${S.mapLayer}. Nearby points have similar representations.`;
+    return `<b><code>${esc(t.piece)}</code></b><span>${kindName(t)} · id ${t.id}</span>${extra ? `<span>${extra}</span>` : ""}<span>Click to select it.</span>`;
   }
   const key = u.p.step.key;
   if (i.type === "word") {
     const w = D.words[i.j];
     let extra = "";
-    if (key === "pick") extra = `Parecido con «${esc(L[q])}»: ${f2(D.layers.at(-1).label_sim[q][i.j])}`;
-    if (key === "marks") extra = `Probabilidad de estar dentro de «${esc(L[q])}»: ${f2(D.boundary.inside[q][i.j])}`;
-    if (key === "decide" && o.userData.ent) extra = `Forma parte de «${esc(o.userData.ent.text)}» → ${esc(L[o.userData.ent.label])} (${f2(o.userData.ent.score)})`;
-    return `<b>${esc(w.text)}</b><span>Palabra ${i.j + 1} de ${D.W}</span>${extra ? `<span>${extra}</span>` : ""}`;
+    if (key === "pick") extra = `Similarity to “${esc(L[q])}”: ${f2(D.layers.at(-1).label_sim[q][i.j])}`;
+    if (key === "marks") extra = `Probability of being inside a “${esc(L[q])}”: ${f2(D.boundary.inside[q][i.j])}`;
+    if (key === "decide" && o.userData.ent) extra = `Part of “${esc(o.userData.ent.text)}” → ${esc(L[o.userData.ent.label])} (${f2(o.userData.ent.score)})`;
+    return `<b>${esc(w.text)}</b><span>Word ${i.j + 1} of ${D.W}</span>${extra ? `<span>${extra}</span>` : ""}`;
   }
-  if (i.type === "label") return `<b>${esc(L[i.q])}</b><span>Etiqueta ${i.q + 1}. Pulsa para seguirla.</span>`;
-  const gapName = (j) => j === 0 ? "antes de la primera palabra" : j === D.W ? "después de la última palabra" : `entre «${esc(D.words[j - 1].text)}» y «${esc(D.words[j].text)}»`;
-  if (i.type === "gap") return `<b>Hueco ${i.j}</b><span>${gapName(i.j)}</span>`;
-  if (i.type === "start") return `<b>Hueco ${i.j} · empieza</b><span>${gapName(i.j)}</span><span>¿Empieza aquí una «${esc(L[q])}»? ${f2(D.boundary.start[q][i.j])}</span>`;
-  if (i.type === "end") return `<b>Hueco ${i.j} · acaba</b><span>${gapName(i.j)}</span><span>¿Acaba aquí una «${esc(L[q])}»? ${f2(D.boundary.end[q][i.j])}</span>`;
-  if (i.type === "cand") { const c = D.candidates[i.ci]; return `<b>«${esc(c.text)}»</b><span>Del hueco ${c.s} al ${c.e}</span><span>¿Es «${esc(L[q])}»? ${f2(c.probs[q])}</span>`; }
+  if (i.type === "label") return `<b>${esc(L[i.q])}</b><span>Label ${i.q + 1}. Click to follow it.</span>`;
+  if (i.type === "gap") return `<b>Gap ${i.j}</b><span>${gapName(i.j)}</span>`;
+  if (i.type === "start") return `<b>Gap ${i.j} · starts</b><span>${gapName(i.j)}</span><span>Does a “${esc(L[q])}” start here? ${f2(D.boundary.start[q][i.j])}</span>`;
+  if (i.type === "end") return `<b>Gap ${i.j} · ends</b><span>${gapName(i.j)}</span><span>Does a “${esc(L[q])}” end here? ${f2(D.boundary.end[q][i.j])}</span>`;
+  if (i.type === "cand") { const c = D.candidates[i.ci]; return `<b>“${esc(c.text)}”</b><span>From gap ${c.s} to gap ${c.e}</span><span>Is it a “${esc(L[q])}”? ${f2(c.probs[q])}</span>`; }
   return "";
 }
 canvas.addEventListener("pointermove", (e) => {
@@ -904,7 +904,7 @@ function renderRail() {
   rail.innerHTML = GROUPS.map((g, gi) => {
     const on = !S.overview && S.view === "flow" && cur?.g === gi;
     const dots = g.key === "layer" && INFO ? `<div class="dots">${Array.from({ length: INFO.layers }, (_, l) => `<span class="${on && cur.layer === l + 1 ? "on" : ""}" data-layer="${l + 1}">${l + 1}</span>`).join("")}</div>` : "";
-    return `<button class="item ${on ? "on" : ""}" data-g="${gi}" type="button"><span class="num">${String(gi + 1).padStart(2, "0")}</span><span class="t">${esc(g.title)}${g.key === "layer" && INFO ? ` · ${INFO.layers} capas` : ""}</span><span class="s">${esc(g.short)}</span>${dots}</button>`;
+    return `<button class="item ${on ? "on" : ""}" data-g="${gi}" type="button"><span class="num">${String(gi + 1).padStart(2, "0")}</span><span class="t">${esc(g.title)}${g.key === "layer" && INFO ? ` · ${INFO.layers} layers` : ""}</span><span class="s">${esc(g.short)}</span>${dots}</button>`;
   }).join("");
 }
 $("#rail").addEventListener("click", (e) => {
@@ -920,7 +920,7 @@ $("#rail").addEventListener("click", (e) => {
   selectStep(STEPS.findIndex((s) => s.g === gi));
 });
 function renderStepper() {
-  $("#stepLabel").innerHTML = S.overview ? "<b>Vista completa</b> · pulsa ▶ para empezar" : `Paso ${S.step + 1} de ${STEPS.length} · <b>${esc(stepTitle(STEPS[S.step]))}</b>`;
+  $("#stepLabel").innerHTML = S.overview ? "<b>Full view</b> · press ▶ to start" : `Step ${S.step + 1} of ${STEPS.length} · <b>${esc(stepTitle(STEPS[S.step]))}</b>`;
 }
 
 // ---------- panel ----------
@@ -929,7 +929,7 @@ const pc = (t, id = false) => `<span class="pc ${t.kind}">${esc(t.piece)}${id ? 
 const strip = (vals) => { const m = Math.max(...vals.map(Math.abs)) || 1; return `<div class="strip">${vals.map((v) => `<i style="background:${diverge(v / m)}"></i>`).join("")}</div>`; };
 const bars = (rows) => `<div class="bars">${rows.map(([name, v, max = 1]) => `<span>${name}</span><div class="bar"><i style="width:${clamp((v / max) * 100, 0, 100)}%"></i></div><span class="num">${f2(v)}</span>`).join("")}</div>`;
 const pctOf = (a, b) => Math.round((100 * a) / b);
-const gapName = (j) => j === 0 ? "antes de la primera palabra" : j === D.W ? "después de la última" : `entre «${esc(D.words[j - 1].text)}» y «${esc(D.words[j].text)}»`;
+const gapName = (j) => j === 0 ? "before the first word" : j === D.W ? "after the last word" : `between “${esc(D.words[j - 1].text)}” and “${esc(D.words[j].text)}”`;
 function spanGroups(ents) {
   const groups = [];
   [...ents].sort((a, b) => a.start - b.start || b.end - a.end).forEach((e) => {
@@ -952,225 +952,225 @@ function highlighted(ents) {
 
 const CONTENT = {
   overview: {
-    what: () => `<p>Esto es <b>GLiNER2.5</b> por dentro: un modelo que encuentra en un texto los tipos de información que tú le pidas (personas, empresas, fechas…), aunque nunca los haya visto al entrenar.</p>
-      <p>Cada placa de la torre es una etapa. Tu frase entra por abajo, sube placa a placa y sale arriba con las entidades marcadas. En medio hay <b>${INFO.layers} capas Transformer</b>, donde cada pieza del texto mira a las demás para entender su contexto.</p>
-      <div class="note key">Pulsa ▶ (abajo) para seguir tu frase paso a paso, o elige una etapa en la columna izquierda. Pasa el ratón por cualquier pieza para ver qué es.</div>
-      <p>Las bolitas que viajan entre placas son la información pasando de una etapa a la siguiente.</p>`,
-    mine: () => `<p>Resultado para tu frase:</p>${highlighted(D.entities)}<p class="mono" style="margin-top:10px">${D.entities.length} entidades · ${D.ms} ms en este ordenador</p>`,
+    what: () => `<p>This is <b>GLiNER2.5</b> from the inside: a model that finds the kinds of information you ask for in a text (people, companies, dates…), even kinds it never saw during training.</p>
+      <p>Each plate of the tower is a stage. Your sentence enters at the bottom, climbs plate by plate and leaves at the top with the entities marked. In between there are <b>${INFO.layers} Transformer layers</b>, where each piece of the text looks at the others to understand its context.</p>
+      <div class="note key">Press ▶ (below) to follow your sentence step by step, or pick a stage in the left column. Hover over any piece to see what it is.</div>
+      <p>The small balls that travel between plates are information passing from one stage to the next.</p>`,
+    mine: () => `<p>Result for your sentence:</p>${highlighted(D.entities)}<p class="mono" style="margin-top:10px">${D.entities.length} entities · ${D.ms} ms of model time</p>`,
     tech: () => techModel(),
   },
   input: {
-    what: () => `<p>GLiNER2.5 no tiene una lista fija de tipos de entidad: <b>se los dices tú</b>. Antes de nada, el modelo junta en una sola secuencia las etiquetas y el texto.</p>
-      <p>Así lee a la vez <i>qué buscar</i> y <i>dónde buscarlo</i>. Es lo que le permite encontrar tipos que nunca vio al entrenar (aprendizaje <i>zero-shot</i>).</p>
-      <div class="note">Analogía: es como dar a alguien un formulario con los campos «persona», «empresa», «ciudad»… y el documento a la vez. Lee los dos juntos y rellena los campos.</div>`,
+    what: () => `<p>GLiNER2.5 has no fixed list of entity types: <b>you choose them</b>. Before anything else, the model joins the labels and the text into one sequence.</p>
+      <p>This way it reads <i>what to look for</i> and <i>where to look</i> at the same time. That is what lets it find types it never saw in training (<i>zero-shot</i> learning).</p>
+      <div class="note">Analogy: it is like handing someone a form with the fields “person”, “company”, “city”… together with the document. They read both at once and fill in the fields.</div>`,
     mine: () => {
       const seq = D.tokens.map((t) => t.kind === "marker" ? `<b ${t.label != null ? `style="--c:${LC(t.label)}"` : ""}>${esc(t.piece)}</b>` : esc(t.piece.replaceAll("▁", " "))).join("");
-      return `<p>Tu frase tiene <b>${D.W} palabras</b> y buscas <b>${D.Q} etiquetas</b>: ${D.input.labels.map((_, q) => labChip(q)).join(" ")}</p>
-        <p>Esto es lo que el modelo lee realmente:</p><div class="seq">${seq}</div>
-        <dl class="legend"><dt>[P]</dt><dd>Empieza una tarea. Aquí, <code>entities</code>: buscar entidades.</dd>
-        <dt>[E]</dt><dd>Aquí va una etiqueta. Su vector final será «la pregunta» que se hace al texto.</dd>
-        <dt>[SEP_TEXT]</dt><dd>Aquí acaban las instrucciones y empieza tu texto.</dd></dl>`;
+      return `<p>Your sentence has <b>${D.W} words</b> and you are looking for <b>${D.Q} labels</b>: ${D.input.labels.map((_, q) => labChip(q)).join(" ")}</p>
+        <p>This is what the model actually reads:</p><div class="seq">${seq}</div>
+        <dl class="legend"><dt>[P]</dt><dd>A task starts. Here it is <code>entities</code>: find entities.</dd>
+        <dt>[E]</dt><dd>A label goes here. Its final vector becomes “the question” asked of the text.</dd>
+        <dt>[SEP_TEXT]</dt><dd>The instructions end here and your text begins.</dd></dl>`;
     },
-    tech: () => `<dl class="tech"><dt>Esquema</dt><dd><code>( [P] entities ( [E] etiqueta₁ [E] etiqueta₂ … ) ) [SEP_TEXT] texto</code></dd>
-      <dt>Tokens especiales</dt><dd>[P], [E], [C], [R], [L], [SEP_STRUCT], [SEP_TEXT], [DESCRIPTION] se añaden al vocabulario. Las tareas de clasificación ([C]) y relaciones ([R]) usan el mismo encoder.</dd>
-      <dt>Código</dt><dd class="file">gliner2/processor.py · schema → tokens</dd></dl>`,
+    tech: () => `<dl class="tech"><dt>Schema</dt><dd><code>( [P] entities ( [E] label₁ [E] label₂ … ) ) [SEP_TEXT] text</code></dd>
+      <dt>Special tokens</dt><dd>[P], [E], [C], [R], [L], [SEP_STRUCT], [SEP_TEXT], [DESCRIPTION] are added to the vocabulary. Structure fields ([C]), relation roles ([R]) and classification labels ([L]) go through the same encoder.</dd>
+      <dt>Code</dt><dd class="file">gliner2/processor.py · schema → tokens</dd></dl>`,
   },
   tokens: {
-    what: () => `<p>El modelo no lee letras ni palabras: lee <b>piezas</b>. Tiene un diccionario de <b>${nf(INFO.vocab)} piezas</b> de muchos idiomas.</p>
-      <p>Las palabras frecuentes son una sola pieza. Las raras se parten en trozos conocidos. El símbolo <code>▁</code> marca que la pieza empieza una palabra nueva.</p>
-      ${D.lower ? `<div class="note">Fíjate: las mayúsculas desaparecen. Este tokenizador lo pasa todo a minúsculas antes de cortar.</div>` : ""}
-      <div class="note">Analogía: como leer una palabra desconocida por sílabas. «Telefónica» puede no estar en el diccionario, pero «telef» y «ónica» sí.</div>`,
+    what: () => `<p>The model does not read letters or words: it reads <b>pieces</b> (tokens). Its vocabulary has <b>${nf(INFO.vocab)} pieces</b> from many languages.</p>
+      <p>Frequent words are a single piece. Rare words are split into known chunks. The symbol <code>▁</code> marks a piece that starts a new word.</p>
+      ${D.lower ? `<div class="note">Notice that capital letters disappear. This tokenizer lowercases everything before it cuts.</div>` : ""}
+      <div class="note">Analogy: like reading an unfamiliar word syllable by syllable. “Unbelievable” may not be in the vocabulary, but “un”, “believ” and “able” are.</div>`,
     mine: () => {
       const text = D.tokens.filter((t) => t.kind === "text").length;
       const groups = D.words.map((w, j) => `<span class="wordgroup">${D.tokens.map((t, k) => t.word === j ? pc(t, true) : "").join("")}<small>${esc(w.text)}</small></span>`).join("");
-      return `<div class="big"><div><b>${D.W}</b><span>palabras</span></div><div><b>${text}</b><span>piezas de texto</span></div><div><b>${D.T}</b><span>piezas en total</span></div></div>
-        <p>Cada palabra y sus piezas (el número pequeño es su posición en el diccionario):</p><div>${groups}</div>
-        <p style="margin-top:12px">Las otras ${D.T - text} piezas son el esquema: ${D.tokens.filter((t) => t.kind !== "text").map((t) => pc(t)).join("")}</p>`;
+      return `<div class="big"><div><b>${D.W}</b><span>words</span></div><div><b>${text}</b><span>text pieces</span></div><div><b>${D.T}</b><span>pieces in total</span></div></div>
+        <p>Each word and its pieces (the small number is the piece's position in the vocabulary):</p><div>${groups}</div>
+        <p style="margin-top:12px">The other ${D.T - text} pieces are the schema: ${D.tokens.filter((t) => t.kind !== "text").map((t) => pc(t)).join("")}</p>`;
     },
-    tech: () => `<dl class="tech"><dt>Tokenizador</dt><dd>SentencePiece (Unigram) de mDeBERTa-v3, ${nf(INFO.vocab)} entradas, multilingüe.</dd>
-      <dt>Longitud</dt><dd>Secuencia de ${D.T} tokens: esquema + <code>[SEP_TEXT]</code> + texto.</dd>
-      <dt>Palabras</dt><dd>El procesador separa primero el texto en palabras (con sus posiciones de carácter) y luego tokeniza cada una. Así sabe qué piezas forman cada palabra.</dd></dl>`,
+    tech: () => `<dl class="tech"><dt>Tokenizer</dt><dd>mDeBERTa-v3 SentencePiece (Unigram), ${nf(INFO.vocab)} entries, multilingual.</dd>
+      <dt>Length</dt><dd>A sequence of ${D.T} tokens: schema + <code>[SEP_TEXT]</code> + text.</dd>
+      <dt>Words</dt><dd>The processor first splits the text into words (with their character positions) and then tokenizes each word. That is how it knows which pieces form each word.</dd></dl>`,
   },
   embed: {
-    what: () => `<p>Cada pieza se cambia por su <b>ficha</b>: una lista de <b>${INFO.hidden} números</b> que resume lo que el modelo aprendió sobre ella durante el entrenamiento.</p>
-      <p>Todavía <b>no mira el contexto</b>: «banco» tiene la misma ficha en «banco del parque» y en «Banco de España». El contexto llega en las capas siguientes.</p>
-      <div class="note">Esta tabla de fichas es enorme: ${nf(INFO.params.embeddings)} números, el <b>${pctOf(INFO.params.embeddings, INFO.params.total)} %</b> de todo el modelo. Es el diccionario: una fila por pieza.</div>`,
+    what: () => `<p>Each piece is swapped for its <b>embedding</b>: a list of <b>${INFO.hidden} numbers</b> that sums up what the model learned about that piece during training.</p>
+      <p>It <b>does not look at context yet</b>: “bank” gets the same embedding in “river bank” and in “Bank of England”. Context arrives in the next layers.</p>
+      <div class="note">This embedding table is huge: ${nf(INFO.params.embeddings)} numbers, <b>${pctOf(INFO.params.embeddings, INFO.params.total)}%</b> of the whole model. It is the dictionary: one row per piece.</div>`,
     mine: () => {
       const L0 = D.layers[0], f = S.focusTok, t = D.tokens[f];
       const same = D.Q > 1 && D.markers.every((k) => L0.strip[k].join() === L0.strip[D.markers[0]].join());
       const show = [...new Set([f, ...D.markers, ...D.words.map((w) => w.token)])].slice(0, 14);
-      return `<p>Ficha de ${pc(t)} (los primeros 32 de ${INFO.hidden} números; terracota = positivo, pizarra = negativo):</p>${strip(L0.strip[f])}
-        ${same ? `<div class="note key">Los ${D.Q} marcadores <code>[E]</code> tienen <b>exactamente la misma ficha</b>: todavía no saben a qué etiqueta acompañan. Lo descubrirán mirando a su alrededor en las capas siguientes.</div>` : ""}
-        <h3>Más fichas</h3><div class="strips">${show.map((k) => `<span>${pc(D.tokens[k])}${D.tokens[k].label != null ? " " + labChip(D.tokens[k].label) : ""}</span>${strip(L0.strip[k])}`).join("")}</div>
-        <p style="margin-top:10px;color:var(--muted);font-size:13px">Pulsa cualquier pieza en el 3D para ver su ficha.</p>`;
+      return `<p>Embedding of ${pc(t)} (the first 32 of ${INFO.hidden} numbers; terracotta = positive, slate = negative):</p>${strip(L0.strip[f])}
+        ${same ? `<div class="note key">The ${D.Q} <code>[E]</code> markers have <b>exactly the same embedding</b>: they do not know yet which label they belong to. They find out by looking around in the next layers.</div>` : ""}
+        <h3>More embeddings</h3><div class="strips">${show.map((k) => `<span>${pc(D.tokens[k])}${D.tokens[k].label != null ? " " + labChip(D.tokens[k].label) : ""}</span>${strip(L0.strip[k])}`).join("")}</div>
+        <p style="margin-top:10px;color:var(--muted);font-size:13px">Click any piece in the 3D view to see its embedding.</p>`;
     },
-    tech: () => `<dl class="tech"><dt>Embedding</dt><dd><code>nn.Embedding(${nf(INFO.vocab)} × ${INFO.hidden})</code> + LayerNorm. Salida <code>[1, ${D.T}, ${INFO.hidden}]</code>.</dd>
-      <dt>Posición</dt><dd>mDeBERTa no suma una posición absoluta a la ficha. El orden entra dentro de la atención, con posiciones relativas («esta pieza está 3 a la izquierda»).</dd>
-      <dt>Parámetros</dt><dd>${nf(INFO.params.embeddings)} de ${nf(INFO.params.total)}.</dd></dl>`,
+    tech: () => `<dl class="tech"><dt>Embedding</dt><dd><code>nn.Embedding(${nf(INFO.vocab)} × ${INFO.hidden})</code> + LayerNorm. Output <code>[1, ${D.T}, ${INFO.hidden}]</code>.</dd>
+      <dt>Position</dt><dd>mDeBERTa does not add an absolute position to the embedding. Word order enters inside attention, as relative positions (“this piece is 3 to the left”).</dd>
+      <dt>Parameters</dt><dd>${nf(INFO.params.embeddings)} of ${nf(INFO.params.total)}.</dd></dl>`,
   },
   layer: {
-    what: (st) => `<p>Cada capa hace dos cosas:</p>
-      <ol><li><b>Atención.</b> Cada pieza pregunta a las demás «¿quién me ayuda a entenderme?» y mezcla su información según la respuesta. Las líneas terracota del 3D muestran a quién mira la pieza seleccionada.</li>
-      <li><b>Reflexión</b> (red <i>feed-forward</i>). Cada pieza procesa a solas lo que ha recogido.</li></ol>
-      <p>Esto se repite ${INFO.layers} veces. Las primeras capas captan forma y vecindad; las últimas, significado y papel en la frase.</p>
-      <div class="note key">Las etiquetas viajan junto al texto. Por eso el marcador de ${labChip(S.label)} puede mirar directamente a las palabras de tu frase, y su mirada se afina capa a capa.</div>
-      <p style="color:var(--muted);font-size:13px">Estás en la capa ${st.layer} de ${INFO.layers}. La altura de cada pieza indica cuánto la mira la pieza seleccionada (en negro).</p>`,
+    what: (st) => `<p>Each layer does two things:</p>
+      <ol><li><b>Attention.</b> Each piece asks the others “who helps me understand myself?” and mixes in their information according to the answer. The terracotta lines in the 3D view show what the selected piece looks at.</li>
+      <li><b>Processing</b> (<i>feed-forward</i> network). Each piece works on its own with what it has gathered.</li></ol>
+      <p>This repeats ${INFO.layers} times. Early layers capture form and neighbours; later layers capture meaning and role in the sentence.</p>
+      <div class="note key">The labels travel together with the text. That is why the marker of ${labChip(S.label)} can look straight at the words of your sentence, and its focus gets sharper layer by layer.</div>
+      <p style="color:var(--muted);font-size:13px">You are at layer ${st.layer} of ${INFO.layers}. The height of each piece shows how much the selected piece (in black) looks at it.</p>`,
     mine: (st) => {
       const f = S.focusTok, att = D.layers[st.layer].attn[f], top = topAttn(st.layer);
       const q = S.label, ws = D.words.map((w) => w.text);
       const cols = D.layers.slice(1).map((L) => { const a = L.label_attn[q], m = Math.max(...a) || 1; return a.map((v) => v / m); });
       const nowBest = argmax(D.layers[st.layer].label_attn[q]), endBest = argmax(D.layers.at(-1).label_attn[q]);
-      return `<p>Pieza seleccionada: ${pc(D.tokens[f])}. En la capa ${st.layer} mira sobre todo a:</p>
+      return `<p>Selected piece: ${pc(D.tokens[f])}. In layer ${st.layer} it looks mostly at:</p>
         ${bars(top.map(([v, j]) => [pc(D.tokens[j]), v, top[0][0]]))}
-        <p style="color:var(--muted);font-size:13px;margin-top:8px">Se queda ${f2(att[f])} de atención para sí misma. Pulsa otra pieza en el 3D para cambiar.</p>
-        <h3>Cómo mira ${labChip(q)} a tu frase, capa a capa</h3>
+        <p style="color:var(--muted);font-size:13px;margin-top:8px">It keeps ${f2(att[f])} of its attention for itself. Click another piece in the 3D view to switch.</p>
+        <h3>How ${labChip(q)} looks at your sentence, layer by layer</h3>
         <table class="heat"><thead><tr><th></th>${cols.map((_, l) => `<th>${l + 1}</th>`).join("")}</tr></thead><tbody>
-        ${ws.map((w, j) => `<tr><th>${esc(w)}</th>${cols.map((c, l) => `<td class="${l + 1 === st.layer ? "cur" : ""}" style="background:${ramp(c[j], LC(q))}" title="capa ${l + 1}: ${f2(D.layers[l + 1].label_attn[q][j])}"></td>`).join("")}</tr>`).join("")}
+        ${ws.map((w, j) => `<tr><th>${esc(w)}</th>${cols.map((c, l) => `<td class="${l + 1 === st.layer ? "cur" : ""}" style="background:${ramp(c[j], LC(q))}" title="layer ${l + 1}: ${f2(D.layers[l + 1].label_attn[q][j])}"></td>`).join("")}</tr>`).join("")}
         </tbody></table>
-        <p>En la capa ${st.layer}, ${labChip(q)} mira sobre todo a <b>«${esc(ws[nowBest])}»</b>. En la última capa, a <b>«${esc(ws[endBest])}»</b>.</p>`;
+        <p>In layer ${st.layer}, ${labChip(q)} looks mostly at <b>“${esc(ws[nowBest])}”</b>. In the last layer, at <b>“${esc(ws[endBest])}”</b>.</p>`;
     },
-    tech: (st) => `<dl class="tech"><dt>Atención</dt><dd>${INFO.heads} cabezas en paralelo, cada una con su propio criterio. Aquí se muestra la media. DeBERTa separa «qué dice» (contenido) y «dónde está» (posición relativa) al calcular la atención.</dd>
-      <dt>Feed-forward</dt><dd>${INFO.hidden} → ${INFO.hidden * 4} → ${INFO.hidden} con GELU, conexión residual y LayerNorm tras cada bloque.</dd>
-      <dt>Forma</dt><dd>Entrada y salida <code>[1, ${D.T}, ${INFO.hidden}]</code>. Atención <code>[1, ${INFO.heads}, ${D.T}, ${D.T}]</code>.</dd>
-      <dt>Parámetros</dt><dd>${nf(INFO.params.layer)} por capa × ${INFO.layers} capas.</dd>
-      <dt>Código</dt><dd class="file">transformers · DebertaV2Layer (capa ${st.layer})</dd></dl>`,
+    tech: (st) => `<dl class="tech"><dt>Attention</dt><dd>${INFO.heads} heads in parallel, each with its own criterion. The view shows their average. DeBERTa separates “what it says” (content) from “where it is” (relative position) when it computes attention.</dd>
+      <dt>Feed-forward</dt><dd>${INFO.hidden} → ${INFO.hidden * 4} → ${INFO.hidden} with GELU, a residual connection and LayerNorm after each block.</dd>
+      <dt>Shape</dt><dd>Input and output <code>[1, ${D.T}, ${INFO.hidden}]</code>. Attention <code>[1, ${INFO.heads}, ${D.T}, ${D.T}]</code>.</dd>
+      <dt>Parameters</dt><dd>${nf(INFO.params.layer)} per layer × ${INFO.layers} layers.</dd>
+      <dt>Code</dt><dd class="file">transformers · DebertaV2Layer (layer ${st.layer})</dd></dl>`,
   },
   pick: {
-    what: () => `<p>Tras las ${INFO.layers} capas, toca volver a <b>palabras</b>. Cada palabra se representa con su <b>primera pieza</b> (la que lleva <code>▁</code>). Esa pieza ya ha absorbido el contexto de las demás.</p>
-      <p>Cada etiqueta se representa con su marcador <code>[E]</code>. Ese vector es <b>la pregunta</b> que se hará al texto: «¿dónde hay una ${esc(D.input.labels[S.label])}?».</p>
-      <p>El resto de piezas (los trozos finales de palabra y el esquema) ya cumplieron su función y se descartan. En el 3D, las bolitas que suben y se desvanecen son esas piezas.</p>`,
+    what: () => `<p>After the ${INFO.layers} layers, the model goes back to <b>words</b>. Each word is represented by its <b>first piece</b> (the one with <code>▁</code>). That piece has already absorbed the context of the others.</p>
+      <p>Each label is represented by its <code>[E]</code> marker. That vector is <b>the question</b> asked of the text: “where is there a ${esc(D.input.labels[S.label])}?”.</p>
+      <p>The other pieces (word endings and the schema) have done their job and are dropped. In the 3D view, the balls that rise and fade are those pieces.</p>`,
     mine: () => {
       const sim = D.layers.at(-1).label_sim;
-      return `<p>Palabra ← pieza elegida:</p><div>${D.words.map((w) => `<span class="wordgroup">${pc(D.tokens[w.token])}<small>${esc(w.text)}</small></span>`).join("")}</div>
-        <h3>Parecido entre cada etiqueta y cada palabra</h3><p style="font-size:13px;color:var(--muted)">Similitud del coseno tras la última capa. Es solo una pista: la decisión real la toman las etapas siguientes.</p>
+      return `<p>Word ← chosen piece:</p><div>${D.words.map((w) => `<span class="wordgroup">${pc(D.tokens[w.token])}<small>${esc(w.text)}</small></span>`).join("")}</div>
+        <h3>Similarity between each label and each word</h3><p style="font-size:13px;color:var(--muted)">Cosine similarity after the last layer. It is only a hint: the next stages make the real decision.</p>
         <table class="heat"><thead><tr><th></th>${D.words.map((w) => `<th title="${esc(w.text)}">${esc(w.text.slice(0, 4))}</th>`).join("")}</tr></thead><tbody>
         ${D.input.labels.map((l, q) => { const r = sim[q], mn = Math.min(...r), mx = Math.max(...r); return `<tr><th>${esc(l)}</th>${r.map((v, j) => `<td style="background:${ramp((v - mn) / (mx - mn || 1), LC(q))}" title="${esc(D.words[j].text)}: ${f2(v)}"></td>`).join("")}</tr>`; }).join("")}
         </tbody></table>`;
     },
-    tech: () => `<dl class="tech"><dt>Agrupación</dt><dd><code>token_pooling = "first"</code>: se toma el vector de la primera pieza de cada palabra.</dd>
-      <dt>Salidas</dt><dd>Texto <code>[1, ${D.W}, ${INFO.hidden}]</code> y consultas (marcadores <code>[E]</code>) <code>[1, ${D.Q}, ${INFO.hidden}]</code>.</dd>
-      <dt>Código</dt><dd class="file">gliner2/models/boundary/model.py · _encode_core</dd></dl>`,
+    tech: () => `<dl class="tech"><dt>Pooling</dt><dd><code>token_pooling = "first"</code>: the model takes the vector of the first piece of each word.</dd>
+      <dt>Outputs</dt><dd>Text <code>[1, ${D.W}, ${INFO.hidden}]</code> and queries (<code>[E]</code> markers) <code>[1, ${D.Q}, ${INFO.hidden}]</code>.</dd>
+      <dt>Code</dt><dd class="file">gliner2/models/boundary/model.py · _encode_core</dd></dl>`,
   },
   gaps: {
-    what: () => `<p>Una entidad es un tramo de texto: <b>empieza en un hueco y acaba en otro</b>. Por eso el modelo deja de mirar palabras y mira los <b>huecos entre palabras</b>.</p>
-      <p>Con ${D.W} palabras hay ${D.W + 1} huecos: uno antes de la primera, uno entre cada par y uno al final. Cada hueco se describe mezclando la palabra de su izquierda y la de su derecha.</p>
-      <p>Luego los huecos se miran entre sí (2 capas de atención) para afinar su descripción.</p>
-      <div class="note">Analogía: para subrayar con un rotulador decides dónde apoyarlo y dónde levantarlo. Los huecos son esos sitios posibles.</div>`,
+    what: () => `<p>An entity is a stretch of text: <b>it starts at one gap and ends at another</b>. So the model stops looking at words and looks at the <b>gaps between words</b>.</p>
+      <p>With ${D.W} words there are ${D.W + 1} gaps: one before the first word, one between each pair and one at the end. Each gap is described by mixing the word on its left and the word on its right.</p>
+      <p>Then the gaps look at each other (${INFO.boundary_attention_layers} attention layers) to refine their description.</p>
+      <div class="note">Analogy: to highlight with a marker pen, you decide where to put it down and where to lift it. The gaps are those possible places.</div>`,
     mine: () => {
       const e = D.entities[0];
       const s = e ? D.words.findIndex((w) => w.start >= e.start) : -1, en = e ? D.words.findLastIndex((w) => w.end <= e.end) + 1 : -1;
-      return `<p>Tus ${D.W + 1} huecos:</p><div class="sentence">${D.words.map((w, j) => `<span class="gp">${j}</span>${esc(w.text)}`).join(" ")} <span class="gp">${D.W}</span></div>
-        ${e ? `<p style="margin-top:12px">Por ejemplo, «${esc(e.text)}» es el tramo <b>del hueco ${s} al hueco ${en}</b>.</p>` : ""}
-        <h3>Huella del hueco 0</h3><p style="font-size:13px;color:var(--muted)">32 de sus ${INFO.boundary_dim} números (más compacto que los ${INFO.hidden} de antes).</p>${strip(D.boundary.strip[0])}`;
+      return `<p>Your ${D.W + 1} gaps:</p><div class="sentence">${D.words.map((w, j) => `<span class="gp">${j}</span>${esc(w.text)}`).join(" ")} <span class="gp">${D.W}</span></div>
+        ${e ? `<p style="margin-top:12px">For example, “${esc(e.text)}” is the stretch <b>from gap ${s} to gap ${en}</b>.</p>` : ""}
+        <h3>Fingerprint of gap 0</h3><p style="font-size:13px;color:var(--muted)">32 of its ${INFO.boundary_dim} numbers (more compact than the ${INFO.hidden} before).</p>${strip(D.boundary.strip[0])}`;
     },
-    tech: () => `<dl class="tech"><dt>BoundaryEncoder</dt><dd>Proyecciones izquierda y derecha ${INFO.hidden} → ${INFO.boundary_dim}, concatenación → ${INFO.boundary_dim}, LayerNorm, ${INFO.boundary_attention_layers} bloques de atención con ventana de ${INFO.boundary_attention_window} huecos y 1 bloque SwiGLU residual.</dd>
-      <dt>Forma</dt><dd><code>[1, ${D.W + 1}, ${INFO.boundary_dim}]</code>. Los extremos usan vectores aprendidos de «inicio» y «fin» de texto.</dd>
-      <dt>Parámetros</dt><dd>${nf(INFO.params.boundary_encoder)}: diminuto frente a los ${nf(INFO.params.encoder)} del encoder.</dd>
-      <dt>Código</dt><dd class="file">gliner2/models/boundary/encoding.py · BoundaryEncoder</dd></dl>`,
+    tech: () => `<dl class="tech"><dt>BoundaryEncoder</dt><dd>Left and right projections ${INFO.hidden} → ${INFO.boundary_dim}, concatenation → ${INFO.boundary_dim}, LayerNorm, ${INFO.boundary_attention_layers} attention blocks with a window of ${INFO.boundary_attention_window} gaps and 1 residual SwiGLU block.</dd>
+      <dt>Shape</dt><dd><code>[1, ${D.W + 1}, ${INFO.boundary_dim}]</code>. The two ends use learned “start of text” and “end of text” vectors.</dd>
+      <dt>Parameters</dt><dd>${nf(INFO.params.boundary_encoder)}: tiny next to the ${nf(INFO.params.encoder)} of the encoder.</dd>
+      <dt>Code</dt><dd class="file">gliner2/models/boundary/encoding.py · BoundaryEncoder</dd></dl>`,
   },
   marks: {
-    what: () => `<p>Ahora entra la pregunta. El vector de la etiqueta se compara con cada hueco y con cada palabra. Salen tres notas de 0 a 1:</p>
-      <ul><li><b style="color:var(--terra)">Empieza</b>: ¿empieza aquí una entidad de este tipo?</li><li><b style="color:var(--slate)">Acaba</b>: ¿acaba aquí?</li><li><b style="color:var(--olive)">Dentro</b>: ¿esta palabra forma parte de una?</li></ul>
-      <p>En el 3D: barras terracota = empieza, barras pizarra = acaba, altura de las palabras = dentro. Cambia de etiqueta arriba para ver cómo cambian.</p>`,
+    what: () => `<p>Now the question comes in. The label vector is compared with every gap and every word. Out come three scores from 0 to 1:</p>
+      <ul><li><b style="color:var(--terra)">Starts</b>: does an entity of this type start here?</li><li><b style="color:var(--slate)">Ends</b>: does it end here?</li><li><b style="color:var(--olive)">Inside</b>: is this word part of one?</li></ul>
+      <p>In the 3D view: terracotta bars = starts, slate bars = ends, word height = inside. Switch the label above to see how they change.</p>`,
     mine: () => {
       const q = S.label, B = D.boundary, s = argmax(B.start[q]), e = argmax(B.end[q]);
       const cell = (v, c) => `<td style="background:${ramp(v, c)}">${v >= 0.5 ? f2(v) : ""}</td>`;
-      let head = "<tr><th></th>", r1 = "<tr><th>empieza</th>", r2 = "<tr><th>dentro</th>", r3 = "<tr><th>acaba</th>";
+      let head = "<tr><th></th>", r1 = "<tr><th>starts</th>", r2 = "<tr><th>inside</th>", r3 = "<tr><th>ends</th>";
       for (let j = 0; j <= D.W; j++) {
         head += `<td class="g">${j}</td>`; r1 += cell(B.start[q][j], C.terra); r2 += "<td></td>"; r3 += cell(B.end[q][j], C.slate);
         if (j < D.W) { head += `<td class="w">${esc(D.words[j].text)}</td>`; r1 += "<td></td>"; r2 += cell(B.inside[q][j], C.olive); r3 += "<td></td>"; }
       }
-      return `<p>Para ${labChip(q)}: lo más probable es que empiece en el <b>hueco ${s}</b> (${f2(B.start[q][s])}) y acabe en el <b>hueco ${e}</b> (${f2(B.end[q][e])}).</p>
+      return `<p>For ${labChip(q)}: it most likely starts at <b>gap ${s}</b> (${f2(B.start[q][s])}) and ends at <b>gap ${e}</b> (${f2(B.end[q][e])}).</p>
         <div style="overflow-x:auto"><table class="marks"><thead>${head}</tr></thead><tbody>${r1}</tr>${r2}</tr>${r3}</tr></tbody></table></div>
-        <p style="font-size:13px;color:var(--muted)">Solo se escriben los valores ≥ 0,50. Pasa el ratón por las barras del 3D para ver todos.</p>`;
+        <p style="font-size:13px;color:var(--muted)">Only values ≥ 0.50 are written. Hover over the bars in the 3D view to see all of them.</p>`;
     },
-    tech: () => `<dl class="tech"><dt>BoundaryQueryHead</dt><dd>Productos escalares escalados entre proyecciones (${INFO.boundary_dim} dims) de los huecos y de la consulta. <code>start_logits</code> y <code>end_logits</code> <code>[1, ${D.Q}, ${D.W + 1}]</code>; <code>inside_logits</code> <code>[1, ${D.Q}, ${D.W}]</code>.</dd>
-      <dt>Truco</dt><dd>La nota «dentro» se acumula en una suma prefija: la puntuación de cualquier tramo se obtiene con una resta, sin recorrerlo.</dd>
-      <dt>Parámetros</dt><dd>${nf(INFO.params.query_head)}.</dd><dt>Código</dt><dd class="file">gliner2/models/boundary/heads.py · BoundaryQueryHead</dd></dl>`,
+    tech: () => `<dl class="tech"><dt>BoundaryQueryHead</dt><dd>Scaled dot products between projections (${INFO.boundary_dim} dims) of the gaps and of the query. <code>start_logits</code> and <code>end_logits</code> <code>[1, ${D.Q}, ${D.W + 1}]</code>; <code>inside_logits</code> <code>[1, ${D.Q}, ${D.W}]</code>.</dd>
+      <dt>Trick</dt><dd>The “inside” score is accumulated as a prefix sum: the score of any stretch takes one subtraction, without walking through it.</dd>
+      <dt>Parameters</dt><dd>${nf(INFO.params.query_head)}.</dd><dt>Code</dt><dd class="file">gliner2/models/boundary/heads.py · BoundaryQueryHead</dd></dl>`,
   },
   pool: {
-    what: () => `<p>Probar todos los tramos posibles sale caro. Con ${D.W} palabras hay ${nf(D.pool.possible)}; en un documento de 500 palabras serían más de 125.000.</p>
-      <p>Así que el modelo se queda con los <b>${INFO.pool_top_k} inicios</b> y los <b>${INFO.pool_top_k} finales</b> más prometedores (de cualquier etiqueta), los combina y guarda como mucho <b>${nf(INFO.pool_size)} tramos</b>. Esta bolsa de candidatos es común para todas las etiquetas.</p>
-      ${D.pool.kept === D.pool.possible ? `<div class="note">Tu frase es corta: caben los ${D.pool.possible} tramos posibles. En textos largos este filtro es decisivo.</div>` : ""}
-      <div class="note key">Si una entidad no entra en la bolsa, el modelo ya no puede encontrarla, por buena que sea su nota después. Es un límite de cobertura.</div>`,
+    what: () => `<p>Trying every possible stretch is expensive. With ${D.W} words there are ${nf(D.pool.possible)}; a 500-word document would have more than 125,000.</p>
+      <p>So the model keeps the <b>${INFO.pool_top_k} most promising starts</b> and the <b>${INFO.pool_top_k} most promising ends</b> (of any label), combines them and keeps at most <b>${nf(INFO.pool_size)} stretches</b>. All labels share this bag of candidates.</p>
+      ${D.pool.kept === D.pool.possible ? `<div class="note">Your sentence is short: all ${D.pool.possible} possible stretches fit. In long texts this filter is decisive.</div>` : ""}
+      <div class="note key">If an entity does not get into the bag, the model can no longer find it, however good its score would be later. It is a coverage limit.</div>`,
     mine: () => {
       const top = [...D.candidates].sort((a, b) => b.prior - a.prior).slice(0, 10);
-      return `<div class="big"><div><b>${D.W + 1}</b><span>huecos</span></div><div><b>${nf(D.pool.possible)}</b><span>tramos posibles</span></div><div><b>${D.pool.kept}</b><span>en la bolsa (máx. ${nf(INFO.pool_size)})</span></div></div>
-        <p>Cada arco del 3D es un candidato: va del hueco donde empieza al hueco donde acaba. Los 10 con mejor nota previa (encaje inicio–fin, antes de mirar la etiqueta):</p>
-        <ul class="list">${top.map((c) => `<li><span>«${esc(c.text)}»</span><span class="num">${c.s}→${c.e} · ${f2(c.prior)}</span></li>`).join("")}</ul>`;
+      return `<div class="big"><div><b>${D.W + 1}</b><span>gaps</span></div><div><b>${nf(D.pool.possible)}</b><span>possible stretches</span></div><div><b>${D.pool.kept}</b><span>in the bag (max. ${nf(INFO.pool_size)})</span></div></div>
+        <p>Each arc in the 3D view is a candidate: it goes from the gap where it starts to the gap where it ends. These are the 10 with the best prior score (start–end fit, before looking at the label):</p>
+        <ul class="list">${top.map((c) => `<li><span>“${esc(c.text)}”</span><span class="num">${c.s}→${c.e} · ${f2(c.prior)}</span></li>`).join("")}</ul>`;
     },
-    tech: () => `<dl class="tech"><dt>DocumentCandidatePool</dt><dd>Máximo de start/end logits sobre las etiquetas, top-${INFO.pool_top_k} por lado, producto cartesiano con fin > inicio, compatibilidad inicio·fin, cuota mínima por etiqueta y deduplicación.</dd>
-      <dt>Ajustes</dt><dd><code>pool_boundary_top_k = ${INFO.pool_top_k}</code>, <code>pool_size = ${INFO.pool_size}</code>. Son configurables al cargar el modelo.</dd>
-      <dt>Código</dt><dd class="file">gliner2/models/boundary/pool.py · DocumentCandidatePool</dd></dl>`,
+    tech: () => `<dl class="tech"><dt>DocumentCandidatePool</dt><dd>Maximum of the start/end logits over the labels, top-${INFO.pool_top_k} per side, Cartesian product with end > start, start·end compatibility, a minimum quota per label and deduplication.</dd>
+      <dt>Settings</dt><dd><code>pool_boundary_top_k = ${INFO.pool_top_k}</code>, <code>pool_size = ${INFO.pool_size}</code>. You can set them when you load the model.</dd>
+      <dt>Code</dt><dd class="file">gliner2/models/boundary/pool.py · DocumentCandidatePool</dd></dl>`,
   },
   score: {
-    what: () => `<p>Cada candidato se convierte en un vector que resume <b>dónde empieza, dónde acaba, cuánto mide y qué contiene</b>.</p>
-      <p>Ese vector se compara con cada etiqueta y sale una probabilidad de 0 a 1: «¿es "${esc(D.candidates[0]?.text ?? "")}" una ${esc(D.input.labels[S.label])}?». A esa nota se suman las de empieza, acaba y dentro del paso 7.</p>
-      <p>En el 3D, cuanto más alto el arco, mayor la probabilidad para ${labChip(S.label)}. Los arcos gruesos superan el umbral (${f2(D.input.threshold)}).</p>`,
+    what: () => `<p>Each candidate becomes a vector that sums up <b>where it starts, where it ends, how long it is and what it contains</b>.</p>
+      <p>That vector is compared with each label, and out comes a probability from 0 to 1: is “${esc(D.candidates[0]?.text ?? "")}” a ${esc(D.input.labels[S.label])}? The starts, ends and inside scores from stage 7 are added to it.</p>
+      <p>In the 3D view, the higher the arc, the higher the probability for ${labChip(S.label)}. Thick arcs pass the threshold (${f2(D.input.threshold)}).</p>`,
     mine: () => {
       const thr = D.input.threshold, top = D.candidates.slice(0, 12);
-      return `<p>Los 12 candidatos con la nota más alta en alguna etiqueta:</p><div style="overflow-x:auto"><table class="heat"><thead><tr><th></th>${D.input.labels.map((l) => `<th style="font-family:var(--sans);font-size:11px">${esc(l)}</th>`).join("")}</tr></thead><tbody>
-        ${top.map((c) => `<tr><th>«${esc(c.text)}»</th>${c.probs.map((v, q) => `<td class="v ${v >= thr ? "hit" : ""}" style="background:${v >= thr ? LC(q) : ramp(v * 0.8, LC(q))}">${f2(v)}</td>`).join("")}</tr>`).join("")}
-        </tbody></table></div><p style="font-size:13px;color:var(--muted)">Relleno de color = supera el umbral ${f2(thr)}.</p>`;
+      return `<p>The 12 candidates with the highest score for any label:</p><div style="overflow-x:auto"><table class="heat"><thead><tr><th></th>${D.input.labels.map((l) => `<th style="font-family:var(--sans);font-size:11px">${esc(l)}</th>`).join("")}</tr></thead><tbody>
+        ${top.map((c) => `<tr><th>“${esc(c.text)}”</th>${c.probs.map((v, q) => `<td class="v ${v >= thr ? "hit" : ""}" style="background:${v >= thr ? LC(q) : ramp(v * 0.8, LC(q))}">${f2(v)}</td>`).join("")}</tr>`).join("")}
+        </tbody></table></div><p style="font-size:13px;color:var(--muted)">Solid fill = passes the threshold ${f2(thr)}.</p>`;
     },
-    tech: () => `<dl class="tech"><dt>SharedPoolScorer</dt><dd>Vector del candidato = inicio + fin + rasgos de longitud (log, relativa, 1/√) + nota previa + contenido (media y log-sum-exp del tramo), con LayerNorm.</dd>
-      <dt>Nota</dt><dd>Producto escalar con la consulta + MLP modulada por la etiqueta (FiLM: γ, β) + start/end logits + media «dentro». Probabilidad = sigmoide.</dd>
-      <dt>Forma</dt><dd><code>[1, ${D.pool.kept}, ${D.Q}]</code> (candidatos × etiquetas). Parámetros: ${nf(INFO.params.scorer)}.</dd>
-      <dt>Código</dt><dd class="file">gliner2/models/boundary/pool.py · SharedPoolScorer</dd></dl>`,
+    tech: () => `<dl class="tech"><dt>SharedPoolScorer</dt><dd>Candidate vector = start + end + length features (log, relative, 1/√) + prior score + content (mean and log-sum-exp of the stretch), with LayerNorm.</dd>
+      <dt>Score</dt><dd>Dot product with the query + an MLP modulated by the label (FiLM: γ, β) + start/end logits + mean “inside”. Probability = sigmoid.</dd>
+      <dt>Shape</dt><dd><code>[1, ${D.pool.kept}, ${D.Q}]</code> (candidates × labels). Parameters: ${nf(INFO.params.scorer)}.</dd>
+      <dt>Code</dt><dd class="file">gliner2/models/boundary/pool.py · SharedPoolScorer</dd></dl>`,
   },
   decide: {
-    what: () => `<p>Quedan tres filtros:</p>
-      <ol><li><b>¿Hay alguna?</b> Un detector por etiqueta puede decir «en este texto no hay ninguna» y anularla entera.</li>
-      <li><b>Umbral.</b> Solo pasan los candidatos con nota ≥ ${f2(D.input.threshold)}. Mueve el umbral arriba y vuelve a analizar.</li>
-      <li><b>Solapes.</b> Dentro de una misma etiqueta, si dos tramos se pisan, se elige la combinación sin solapes con mayor nota total.</li></ol>
-      <p>Lo que queda es la respuesta, con la posición exacta de cada entidad en el texto original.</p>`,
+    what: () => `<p>Three filters remain:</p>
+      <ol><li><b>Is there any?</b> A detector per label can say “there is none in this text” and drop the whole label.</li>
+      <li><b>Threshold.</b> Only candidates with a score ≥ ${f2(D.input.threshold)} pass. Move the threshold at the top and analyze again.</li>
+      <li><b>Overlaps.</b> Within one label, if two stretches overlap, the non-overlapping combination with the highest total score wins.</li></ol>
+      <p>What is left is the answer, with the exact position of each entity in the original text.</p>`,
     mine: () => {
       const thr = D.input.threshold, abs = D.abstention_threshold;
       const lost = [];
       D.candidates.forEach((c) => c.probs.forEach((v, q) => { if (v >= thr && !c.final.includes(q)) lost.push([c, q, v]); }));
       const twice = spanGroups(D.entities).filter((g) => g.labels.length > 1);
       return `${highlighted(D.entities)}
-        ${twice.length ? `<div class="note key">«${esc(D.input.text.slice(twice[0].start, twice[0].end))}» sale con ${twice[0].labels.length} etiquetas. Este modelo resuelve los solapes dentro de cada etiqueta, pero no entre etiquetas distintas. Si solo quieres una, se decide después, por ejemplo con la de mayor nota.</div>` : ""}
-        <ul class="list" style="margin-top:12px">${D.entities.map((e) => `<li><span>${labChip(e.label)} «${esc(e.text)}»</span><span class="num">${f2(e.score)}</span></li>`).join("") || "<li>Ninguna entidad supera el umbral.</li>"}</ul>
-        ${D.null ? `<h3>¿Hay alguna de cada tipo?</h3>${bars(D.input.labels.map((l, q) => [labChip(q), 1 - D.null[q]]))}<p style="font-size:13px;color:var(--muted);margin-top:6px">Si baja de ${f2(1 - abs)}, esa etiqueta se anula.</p>` : ""}
-        ${lost.length ? `<h3>Superaron el umbral pero se descartaron</h3><ul class="list">${lost.slice(0, 8).map(([c, q, v]) => `<li><span>${labChip(q)} «${esc(c.text)}»</span><span class="num">${f2(v)} · ${D.null && D.null[q] > abs ? "etiqueta anulada" : "se solapa"}</span></li>`).join("")}</ul>` : ""}`;
+        ${twice.length ? `<div class="note key">“${esc(D.input.text.slice(twice[0].start, twice[0].end))}” comes out with ${twice[0].labels.length} labels. This model resolves overlaps within each label, but not between different labels. If you want only one, decide afterwards, for example by keeping the highest score.</div>` : ""}
+        <ul class="list" style="margin-top:12px">${D.entities.map((e) => `<li><span>${labChip(e.label)} “${esc(e.text)}”</span><span class="num">${f2(e.score)}</span></li>`).join("") || "<li>No entity passes the threshold.</li>"}</ul>
+        ${D.null ? `<h3>Is there any of each type?</h3>${bars(D.input.labels.map((l, q) => [labChip(q), 1 - D.null[q]]))}<p style="font-size:13px;color:var(--muted);margin-top:6px">If it falls below ${f2(1 - abs)}, that label is dropped.</p>` : ""}
+        ${lost.length ? `<h3>Passed the threshold but were discarded</h3><ul class="list">${lost.slice(0, 8).map(([c, q, v]) => `<li><span>${labChip(q)} “${esc(c.text)}”</span><span class="num">${f2(v)} · ${D.null && D.null[q] > abs ? "label dropped" : "overlaps"}</span></li>`).join("")}</ul>` : ""}`;
     },
-    tech: () => `<dl class="tech"><dt>Abstención</dt><dd><code>null_projection</code> por etiqueta; se anula si su probabilidad supera ${f2(D.abstention_threshold)}.</dd>
-      <dt>Solapes</dt><dd><code>overlap_policy = "flat"</code>: selección de intervalos sin solape con máxima suma de notas, por etiqueta. Entre etiquetas distintas no se resuelve aquí.</dd>
-      <dt>Posiciones</dt><dd>Los huecos se traducen a caracteres con los mapas de inicio y fin de cada palabra.</dd>
-      <dt>Código</dt><dd class="file">gliner2/models/boundary/engine.py · _decode_entities</dd></dl>`,
+    tech: () => `<dl class="tech"><dt>Abstention</dt><dd><code>null_projection</code> per label; the label is dropped if its probability is above ${f2(D.abstention_threshold)}.</dd>
+      <dt>Overlaps</dt><dd><code>overlap_policy = "flat"</code>: per label, it selects the non-overlapping intervals with the maximum sum of scores. Overlaps between different labels are not resolved here.</dd>
+      <dt>Positions</dt><dd>The start and end maps of each word translate gaps into character offsets.</dd>
+      <dt>Code</dt><dd class="file">gliner2/models/boundary/engine.py · _decode_entities</dd></dl>`,
   },
   map: {
-    what: () => `<p>Cada punto es una pieza de tu entrada. Sus ${INFO.hidden} números no se pueden dibujar, así que los resumimos en 3 (análisis de componentes principales). <b>Piezas cercanas = representaciones parecidas.</b></p>
-      <p>Mueve la capa o pulsa ▶. En las fichas (capa 0) los marcadores <code>[E]</code> están en el mismo punto, porque aún no saben de qué etiqueta son. Capa a capa se separan y el texto se reorganiza según su papel en la frase.</p>
-      <div class="note">Es una proyección: las distancias en 3D son aproximadas. La línea fina une la etiqueta seleccionada con la palabra a la que más se parece, medido con los ${INFO.hidden} números reales.</div>`,
+    what: () => `<p>Each point is a piece of your input. Its ${INFO.hidden} numbers cannot be drawn, so we sum them up in 3 (principal component analysis). <b>Nearby pieces = similar representations.</b></p>
+      <p>Move the layer slider or press ▶. In the embeddings (layer 0) the <code>[E]</code> markers sit on the same point, because they do not know yet which label they belong to. Layer by layer they move apart, and the text reorganizes by its role in the sentence.</p>
+      <div class="note">It is a projection: distances in 3D are approximate. The thin line joins the selected label with the word it is most similar to, measured with the real ${INFO.hidden} numbers.</div>`,
     mine: () => {
       const L = D.layers[S.mapLayer];
-      return `<p>En ${S.mapLayer === 0 ? "las fichas (capa 0)" : `la capa ${S.mapLayer}`}, cada etiqueta se parece más a:</p>
-        <ul class="list">${D.input.labels.map((l, q) => { const j = argmax(L.label_sim[q]); return `<li><span>${labChip(q)} → «${esc(D.words[j].text)}»</span><span class="num">${f2(L.label_sim[q][j])}</span></li>`; }).join("")}</ul>
-        ${S.mapLayer === 0 ? `<p style="font-size:13px;color:var(--muted);margin-top:8px">En la capa 0 todas las etiquetas dan la misma respuesta: sus marcadores son idénticos.</p>` : ""}`;
+      return `<p>In ${S.mapLayer === 0 ? "the embeddings (layer 0)" : `layer ${S.mapLayer}`}, each label is most similar to:</p>
+        <ul class="list">${D.input.labels.map((l, q) => { const j = argmax(L.label_sim[q]); return `<li><span>${labChip(q)} → “${esc(D.words[j].text)}”</span><span class="num">${f2(L.label_sim[q][j])}</span></li>`; }).join("")}</ul>
+        ${S.mapLayer === 0 ? `<p style="font-size:13px;color:var(--muted);margin-top:8px">In layer 0 every label gives the same answer: their markers are identical.</p>` : ""}`;
     },
-    tech: () => `<dl class="tech"><dt>Proyección</dt><dd>PCA a 3 dimensiones de los vectores normalizados de cada capa, alineada con la capa anterior (Procrustes) para que los puntos se muevan de forma continua.</dd>
-      <dt>Parecido</dt><dd>Similitud del coseno entre el vector del marcador <code>[E]</code> y la primera pieza de cada palabra, en ${INFO.hidden} dimensiones.</dd></dl>`,
+    tech: () => `<dl class="tech"><dt>Projection</dt><dd>3D PCA of each layer's normalized vectors, aligned with the previous layer (Procrustes) so the points move smoothly.</dd>
+      <dt>Similarity</dt><dd>Cosine similarity between the vector of the <code>[E]</code> marker and the first piece of each word, in ${INFO.hidden} dimensions.</dd></dl>`,
   },
 };
 function techModel() {
   const P = INFO.params;
-  return `<dl class="tech"><dt>Modelo</dt><dd><code>${esc(INFO.name)}</code>: encoder ${esc(INFO.encoder)} (mDeBERTa-v3) + cabeza de fronteras.</dd>
-    <dt>Tamaño</dt><dd>${nf(P.total)} parámetros: fichas ${pctOf(P.embeddings, P.total)} %, capas Transformer ${pctOf(P.encoder - P.embeddings, P.total)} %, cabeza de fronteras ${((100 * (P.boundary_encoder + P.query_head + P.pool + P.scorer)) / P.total).toFixed(1)} %.</dd>
-    <dt>Encoder</dt><dd>${INFO.layers} capas, ${INFO.hidden} dimensiones, ${INFO.heads} cabezas de atención.</dd>
-    <dt>Cabeza</dt><dd>Huecos ${INFO.boundary_dim} dims · bolsa top-${INFO.pool_top_k} × top-${INFO.pool_top_k}, máximo ${INFO.pool_size} candidatos.</dd>
-    <dt>Lo que no se muestra</dt><dd>El mismo modelo también clasifica textos y extrae relaciones y registros; aquí solo se recorre la extracción de entidades.</dd></dl>`;
+  return `<dl class="tech"><dt>Model</dt><dd><code>${esc(INFO.name)}</code>: ${esc(INFO.encoder)} encoder (mDeBERTa-v3) + boundary head.</dd>
+    <dt>Size</dt><dd>${nf(P.total)} parameters: embeddings ${pctOf(P.embeddings, P.total)}%, Transformer layers ${pctOf(P.encoder - P.embeddings, P.total)}%, boundary head ${((100 * (P.boundary_encoder + P.query_head + P.pool + P.scorer)) / P.total).toFixed(1)}%.</dd>
+    <dt>Encoder</dt><dd>${INFO.layers} layers, ${INFO.hidden} dimensions, ${INFO.heads} attention heads.</dd>
+    <dt>Head</dt><dd>Gaps of ${INFO.boundary_dim} dims · bag of top-${INFO.pool_top_k} × top-${INFO.pool_top_k}, at most ${INFO.pool_size} candidates.</dd>
+    <dt>Not shown</dt><dd>The same model also classifies text and extracts relations and records; this walkthrough covers entity extraction only.</dd></dl>`;
 }
 function renderPanel() {
   if (!INFO) return;
-  $("#follow").innerHTML = D ? `<span>Sigues la etiqueta:</span>${D.input.labels.map((l, q) => `<button type="button" class="lab ${q === S.label ? "on" : ""}" style="--c:${LC(q)}" data-q="${q}">${esc(l)}</button>`).join("")}` : "";
+  $("#follow").innerHTML = D ? `<span>Following label:</span>${D.input.labels.map((l, q) => `<button type="button" class="lab ${q === S.label ? "on" : ""}" style="--c:${LC(q)}" data-q="${q}">${esc(l)}</button>`).join("")}` : "";
   if (!D) return;
   const key = S.view === "map" ? "map" : S.overview ? "overview" : STEPS[S.step].key;
   const st = STEPS[S.step], g = GROUPS[st.g];
-  $("#kicker").textContent = S.view === "map" ? "Vista alternativa" : S.overview ? `${STEPS.length} pasos · ${GROUPS.length} etapas` : `Paso ${S.step + 1} de ${STEPS.length}`;
-  $("#ptitle").textContent = S.view === "map" ? "Mapa de significados" : S.overview ? "Una frase atraviesa el modelo" : stepTitle(st) + (st.key === "layer" ? " · Transformer" : "");
-  $("#plede").textContent = S.view === "map" ? "Dónde coloca el modelo cada pieza, capa a capa." : S.overview ? "De tu texto a las entidades, en diez etapas." : g.short;
+  $("#kicker").textContent = S.view === "map" ? "Alternative view" : S.overview ? `${STEPS.length} steps · ${GROUPS.length} stages` : `Step ${S.step + 1} of ${STEPS.length}`;
+  $("#ptitle").textContent = S.view === "map" ? "Meaning map" : S.overview ? "A sentence travels through the model" : stepTitle(st) + (st.key === "layer" ? " · Transformer" : "");
+  $("#plede").textContent = S.view === "map" ? "Where the model places each piece, layer by layer." : S.overview ? "From your text to the entities, in ten stages." : g.short;
   document.querySelectorAll("[role=tab]").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === S.tab));
   $("#tabbody").innerHTML = CONTENT[key][S.tab](st);
 }
@@ -1207,7 +1207,7 @@ async function analyze() {
     if (S.view === "map") setView("map");
     renderRail(); renderPanel();
   } catch (e) {
-    toast(e instanceof TypeError ? "No encuentro el servidor. Arráncalo con: uv run server.py" : e.message);
+    toast(e instanceof TypeError ? "Cannot reach the server. Start it with: uv run server.py" : e.message);
   } finally { $("#go").disabled = false; $("#busy").classList.remove("on"); }
 }
 
@@ -1232,7 +1232,7 @@ $("#trails").onchange = mapRefresh;
 $("#sound").onclick = () => {
   S.sound = !S.sound;
   $("#sound").setAttribute("aria-pressed", S.sound);
-  $("#sound span").textContent = `Sonido: ${S.sound ? "sí" : "no"}`;
+  $("#sound span").textContent = `Sound: ${S.sound ? "on" : "off"}`;
   $("#waves").setAttribute("opacity", S.sound ? 1 : 0.25);
   chime();
 };
@@ -1250,8 +1250,8 @@ addEventListener("keydown", (e) => {
   try {
     INFO = await (await fetch("/api/info")).json();
   } catch {
-    $("#ptitle").textContent = "Servidor no disponible";
-    $("#tabbody").innerHTML = `<p>Arranca el servidor desde esta carpeta:</p><p><code>uv run server.py</code></p><p>y abre <code>http://localhost:8765</code>.</p>`;
+    $("#ptitle").textContent = "Server not available";
+    $("#tabbody").innerHTML = `<p>Start the server from this folder:</p><p><code>uv run server.py</code></p><p>and open <code>http://localhost:8765</code>.</p>`;
     return;
   }
   buildSteps(INFO.layers);

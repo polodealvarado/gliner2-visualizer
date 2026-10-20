@@ -214,11 +214,11 @@ def validate(body):
     labels = list(dict.fromkeys(labels))
     threshold = float(body.get("threshold", 0.5))
     if not text or len(text.split()) > MAX_WORDS:
-        raise ValueError(f"Escribe una frase de 1 a {MAX_WORDS} palabras.")
+        raise ValueError(f"Write a sentence of 1 to {MAX_WORDS} words.")
     if not 1 <= len(labels) <= MAX_LABELS:
-        raise ValueError(f"Usa de 1 a {MAX_LABELS} etiquetas.")
+        raise ValueError(f"Use 1 to {MAX_LABELS} labels.")
     if not 0.0 < threshold < 1.0:
-        raise ValueError("El umbral va entre 0 y 1.")
+        raise ValueError("The threshold must be between 0 and 1.")
     return text[:600], labels, threshold
 
 
@@ -259,16 +259,16 @@ if __name__ == "__main__":
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--check", action="store_true", help="run one sentence, verify the output and exit")
     args = ap.parse_args()
-    print(f"Cargando {args.model}…")
+    print(f"Loading {args.model}…")
     MODEL = load(args.model)
     INFO = model_info(MODEL, args.model)
     if args.check:
-        out = analyze(MODEL, *validate({"text": "María García vive en Madrid.", "labels": ["persona", "ciudad"]}))
+        out = analyze(MODEL, *validate({"text": "Maria Garcia lives in Madrid.", "labels": ["person", "city"]}))
         n_words, n_tok = len(out["words"]), len(out["tokens"])
         assert len(out["layers"]) == INFO["layers"] + 1
         assert all(len(l["attn"]) == n_tok for l in out["layers"][1:])
         assert len(out["boundary"]["start"][0]) == n_words + 1 and len(out["boundary"]["inside"][0]) == n_words
-        assert {(e["label"], e["text"]) for e in out["entities"]} >= {(0, "María García"), (1, "Madrid")}, out["entities"]
-        raise SystemExit(f"OK: {n_tok} tokens, {n_words} palabras, {len(out['candidates'])} candidatos, {out['ms']} ms")
-    print(f"Listo: http://localhost:{args.port}")
+        assert {(e["label"], e["text"]) for e in out["entities"]} >= {(0, "Maria Garcia"), (1, "Madrid")}, out["entities"]
+        raise SystemExit(f"OK: {n_tok} tokens, {n_words} words, {len(out['candidates'])} candidates, {out['ms']} ms")
+    print(f"Ready: http://localhost:{args.port}")
     HTTPServer(("127.0.0.1", args.port), Handler).serve_forever()

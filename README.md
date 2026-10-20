@@ -1,38 +1,43 @@
-# GLiNER2.5, por dentro
+# Inside GLiNER2.5
 
-Visualización 3D interactiva y didáctica de GLiNER2.5 para gente no técnica.
-Escribes una frase y las etiquetas que buscas. El modelo real se ejecuta y la página dibuja lo que produce cada etapa, de las piezas del texto a las entidades finales.
+An interactive, didactic 3D view of GLiNER2.5 for non-technical readers.
+You type a sentence and the labels you are looking for. The real model runs, and the page draws what each stage produces, from the pieces of the text to the final entities.
 
-## Arrancar
+## Start
 
 ```bash
-uv run server.py            # modelo base fastino/gliner2.5-multi-v1
+uv run server.py            # base model fastino/gliner2.5-multi-v1
 open http://localhost:8765
 ```
 
-`uv` instala las dependencias declaradas en la cabecera de `server.py`.
-La primera vez descarga el modelo de Hugging Face (~1,1 GB).
+`uv` installs the dependencies declared in the header of `server.py`.
+The first run downloads the model from Hugging Face (~1.1 GB).
 
-| Opción | Uso |
+| Option | Use |
 |---|---|
-| `--model <repo>` | Otro checkpoint GLiNER2.5 *boundary*, p. ej. `fastino/gliner2.5-base-v1`. |
-| `--port <n>` | Puerto (por defecto 8765). |
-| `--check` | Pasa una frase, verifica la salida y termina. |
+| `--model <repo>` | Another GLiNER2.5 *boundary* checkpoint, e.g. `fastino/gliner2.5-base-v1`. |
+| `--port <n>` | Port (default 8765). |
+| `--check` | Runs one sentence, verifies the output and exits. |
 
-## Qué se ve
+## What you see
 
-Diez etapas apiladas en una torre, de abajo arriba: texto y etiquetas, tokenizador, fichas (embeddings), 12 capas Transformer, representantes, huecos entre palabras, «¿empieza? ¿acaba?», candidatos, puntuación y decisión.
-Cada etapa tiene tres pestañas: «Qué hace» (en lenguaje llano), «Con tu frase» (los valores reales) y «Por dentro» (formas, parámetros y fichero del código).
-La vista «Mapa de significados» muestra cómo se mueve cada pieza en el espacio del modelo, capa a capa.
+Ten stages stacked in a tower, from bottom to top: text and labels, tokenizer, embeddings, 12 Transformer layers, word and label vectors, gaps between words, "starts? ends?", candidates, scoring and decision.
+Each stage has three tabs: "What it does" (plain language), "With your sentence" (the real values) and "Under the hood" (shapes, parameters and the source file).
+The "Meaning map" view shows how each piece moves through the model's space, layer by layer.
 
-## Ficheros
+## Files
 
-- `server.py`: carga el modelo, captura con *hooks* las salidas intermedias (estados ocultos y atención del encoder, huecos, logits de inicio/fin/dentro, bolsa de candidatos, notas, abstención) y las sirve en `/api/analyze`.
-- `index.html`: la página (Three.js desde CDN, sin compilación).
+- `server.py`: loads the model, captures the intermediate outputs with hooks (encoder hidden states and attention, gaps, start/end/inside logits, candidate pool, scores, abstention) and serves them at `/api/analyze`.
+- `index.html`: the page (Three.js from a CDN, no build step).
 
-## Simplificaciones
+## Simplifications
 
-- La atención se muestra como la media de las 12 cabezas.
-- El mapa es una proyección PCA a 3D: las distancias son aproximadas. Las cifras de parecido usan los 768 números reales.
-- Solo se recorre la extracción de entidades. El modelo también clasifica y extrae relaciones.
-- Límites: 60 palabras y 8 etiquetas por frase, para que el dibujo siga legible.
+- Attention is shown as the average of the 12 heads.
+- The map is a 3D PCA projection, so distances are approximate. The similarity figures use the real 768 numbers.
+- Only entity extraction is walked through. The model also classifies text and extracts relations, records and span attributes.
+- Limits: 60 words and 8 labels per sentence, so the drawing stays readable.
+
+## Credits
+
+GLiNER2 and the GLiNER2.5 checkpoints are by [Fastino AI](https://github.com/fastino-ai/GLiNER2) (Apache-2.0; paper: [arXiv:2507.18546](https://arxiv.org/abs/2507.18546)).
+This visualization is an independent project and is not affiliated with Fastino.
