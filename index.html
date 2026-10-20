@@ -24,7 +24,9 @@ button { cursor: pointer; }
 header { display: grid; grid-template-columns: minmax(220px, 300px) 1fr; gap: 28px; align-items: end; padding: 18px 24px 14px; border-bottom: 1px solid var(--line); }
 .brand h1 { font: 600 27px/1.1 var(--serif); margin: 0 0 4px; letter-spacing: -0.01em; }
 .brand p { margin: 0; color: var(--muted); font-size: 13px; }
-form { display: grid; grid-template-columns: 1fr minmax(180px, 280px) 180px auto; gap: 10px; align-items: end; }
+form { display: grid; grid-template-columns: 1fr 180px auto; gap: 10px; align-items: end; }
+.tasks { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.tasks input[type=text] { font-size: 13.5px; padding: 7px 10px; }
 .field label { display: block; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px 2px; }
 .field input[type=text] { width: 100%; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; }
 .field input[type=text]:focus { border-color: var(--terra); outline: none; }
@@ -148,11 +150,18 @@ dl.legend dd { margin: 0; color: var(--muted); }
 .tech dt { font: 500 12.5px var(--mono); color: var(--ink); margin-top: 10px; }
 .tech dd { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
 .file { font: 12px var(--mono); color: var(--faint); }
+.follow .fg { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-right: 8px; }
+.follow .fg small { font: 500 11px var(--mono); color: var(--faint); }
+.seq .segl { display: block; }
+.seq small { font: 500 10.5px var(--sans); color: var(--faint); text-transform: uppercase; letter-spacing: .05em; margin-right: 6px; }
+.pc.desc { background: #F1E6D3; color: var(--muted); }
 
 @media (max-width: 1100px) {
   body { height: auto; overflow: auto; }
   header { grid-template-columns: 1fr; gap: 12px; }
-  form { grid-template-columns: 1fr 1fr; }
+  form { grid-template-columns: 1fr auto; }
+  form > .field:first-child { grid-column: 1 / -1; }
+  .tasks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   main { grid-template-columns: 1fr; }
   #rail { display: flex; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 8px 16px; gap: 4px; }
   #rail .item { min-width: 170px; border-left: 0; border-bottom: 3px solid transparent; border-radius: 10px 10px 0 0; }
@@ -163,7 +172,7 @@ dl.legend dd { margin: 0; color: var(--muted); }
 }
 @media (max-width: 560px) {
   header { padding: 14px 16px 12px; }
-  form { grid-template-columns: 1fr; }
+  form, .tasks { grid-template-columns: 1fr; }
   #stepLabel, #mapCtl input[type=range] { display: none; }
   .hud.tr { top: 60px; left: 14px; right: auto; }
 }
@@ -183,9 +192,15 @@ dl.legend dd { margin: 0; color: var(--muted); }
   </div>
   <form id="form">
     <div class="field"><label for="text">Your sentence</label><input id="text" type="text" autocomplete="off" spellcheck="false"></div>
-    <div class="field"><label for="labels">What to find (comma-separated)</label><input id="labels" type="text" autocomplete="off" spellcheck="false"></div>
     <div class="field"><label for="thr">Threshold</label><div class="thr"><input id="thr" type="range" min="0.05" max="0.95" step="0.05" value="0.5"><output id="thrOut">0.50</output></div></div>
     <button class="primary" id="go" type="submit">Analyze</button>
+    <div class="tasks">
+      <div class="field"><label for="fEnt">Entities</label><input id="fEnt" type="text" autocomplete="off" spellcheck="false" placeholder="person = named people, company" title="Entity types, comma-separated. Add a description after =."></div>
+      <div class="field"><label for="fAttr">Attributes</label><input id="fAttr" type="text" autocomplete="off" spellcheck="false" placeholder="mood: happy, annoyed → person" title="group: labels → entity types it applies to. Separate groups with ;"></div>
+      <div class="field"><label for="fCls">Classification</label><input id="fCls" type="text" autocomplete="off" spellcheck="false" placeholder="topic: tech, sports; tone: good, bad" title="task: labels. Separate tasks with ;"></div>
+      <div class="field"><label for="fRel">Relations</label><input id="fRel" type="text" autocomplete="off" spellcheck="false" placeholder="works_for, located_in" title="Relation types, comma-separated."></div>
+      <div class="field"><label for="fStr">Structure</label><input id="fStr" type="text" autocomplete="off" spellcheck="false" placeholder="launch: product*, company, place" title="name: fields. * marks the anchor field (default: the first). Separate structures with ;"></div>
+    </div>
     <div class="sub" id="examples"><span>Examples:</span><span id="status"></span></div>
   </form>
 </header>
@@ -249,8 +264,8 @@ const nf = (n) => Number(n).toLocaleString("en-US");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const argmax = (a) => a.reduce((b, v, i) => (v > a[b] ? i : b), 0);
 const C = { bg: "#F3EEE5", paper: "#FBF8F2", wash: "#F7F1E7", plate: "#E8DFCE", ink: "#2B2926", muted: "#6E685F",
-  terra: "#B85C3C", slate: "#4D6170", sand: "#D4B48C", olive: "#7C8A5A", schema: "#C3C9CD" };
-const LABEL_COLORS = ["#B85C3C", "#4D6170", "#7C8A5A", "#C0913A", "#8A5A6E", "#4F7F78", "#8C6A4F", "#6E6A9A"];
+  terra: "#B85C3C", slate: "#4D6170", sand: "#D4B48C", olive: "#7C8A5A", schema: "#C3C9CD", cls: "#6A5A99" };
+const LABEL_COLORS = ["#B85C3C", "#4D6170", "#7C8A5A", "#C0913A", "#8A5A6E", "#4F7F78", "#8C6A4F", "#3E7CA6", "#A84E62", "#6B8F3A", "#9C7A2E", "#5C6E8F"];
 const LC = (q) => LABEL_COLORS[q % LABEL_COLORS.length];
 const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const mix = (a, b, t) => { const A = rgb(a), B = rgb(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * clamp(t, 0, 1))).join(",")})`; };
@@ -262,23 +277,37 @@ const S = { step: 0, overview: true, label: 0, focusTok: 0, view: "flow", tab: "
 let INFO = null, D = null, STEPS = [], plates = [];
 
 const EXAMPLES = [
-  { name: "Company and city", text: "Maria Garcia has worked at Telefónica in Madrid since 2019.", labels: "person, company, city, date" },
-  { name: "Medical record", text: "Patient John Smith, aged 54, was admitted to St Mary's Hospital on 3 March with pneumonia.", labels: "person, age, hospital, date, disease" },
-  { name: "Bank transfer", text: "Anna Lopez sent 1,200 euros to account ES91 2100 0418 4502 0005 1332 on Monday.", labels: "person, amount of money, account number, date" },
-  { name: "Ambiguous word", text: "We had a picnic on the river bank, then walked to the Bank of England.", labels: "location, organization" },
-  { name: "In Spanish", text: "María García trabaja en Telefónica en Madrid desde 2019.", labels: "person, company, city, date" },
+  { name: "Company and city", text: "Maria Garcia has worked at Telefónica in Madrid since 2019.", ent: "person, company, city, date", cls: "topic: business, sports, politics", rel: "works_for, located_in" },
+  { name: "Tech launch", text: "Tim Cook, the CEO of Apple, happily presented the iPhone 17 in Cupertino, while Elon Musk looked annoyed.", ent: "person = named people, company, product", attr: "mood: happy, annoyed → person", cls: "topic: technology, sports, politics", rel: "works_for, located_in", str: "launch: product*, company, place" },
+  { name: "Product review", text: "The camera is superb, but the battery dies by noon and support never answered my emails.", ent: "product feature", attr: "opinion: positive, negative → product feature", cls: "overall: positive, negative, mixed" },
+  { name: "Medical record", text: "Patient John Smith, aged 54, was admitted to St Mary's Hospital on 3 March with pneumonia.", ent: "person, age, hospital, date, disease", cls: "urgency: urgent, routine", str: "admission: patient*, hospital, date" },
+  { name: "Bank transfer", text: "Anna Lopez sent 1,200 euros to account ES91 2100 0418 4502 0005 1332 on Monday.", ent: "person, amount of money, account number, date", str: "transfer: sender*, amount, account, date" },
+  { name: "Ambiguous word", text: "We had a picnic on the river bank, then walked to the Bank of England.", ent: "location, organization" },
+  { name: "In Spanish", text: "María García trabaja en Telefónica en Madrid desde 2019.", ent: "person, company, city, date", rel: "works_for" },
+];
+const FIELDS = { ent: "#fEnt", attr: "#fAttr", cls: "#fCls", rel: "#fRel", str: "#fStr" };
+const TASK_NAME = { entities: "Entities", relations: "Relation", json_structures: "Structure", classifications: "Classification" };
+const MARKERS = [
+  ["[P]", "A task starts. The words after it name the task."],
+  ["[E]", "An entity type, or an attribute label written as “group: label”. Its final vector becomes a question asked of the text."],
+  ["[R]", "A relation role: <code>head</code> (where the relation starts) or <code>tail</code> (where it points)."],
+  ["[C]", "A field of a structure, for example the product of a launch."],
+  ["[L]", "A classification label. It is scored against the whole text, not against a stretch of it."],
+  ["[DESCRIPTION]", "A plain-language description of a label, to help the model."],
+  ["[SEP_STRUCT]", "Separates two tasks."],
+  ["[SEP_TEXT]", "The schema ends here and your text begins."],
 ];
 
 const GROUPS = [
-  { key: "input", title: "Text and labels", short: "Your sentence and the list of things you want to find." },
+  { key: "input", title: "Text and schema", short: "Your sentence and the list of things you ask for." },
   { key: "tokens", title: "Tokenizer", short: "Cuts the text into pieces the model knows." },
   { key: "embed", title: "Embeddings", short: "Each piece is swapped for a list of numbers." },
   { key: "layer", title: "Transformer", short: "Each piece looks at the others and updates itself." },
-  { key: "pick", title: "Word and label vectors", short: "One vector per word and one per label." },
+  { key: "pick", title: "Word and query vectors", short: "One vector per word and one per query." },
   { key: "gaps", title: "Gaps between words", short: "An entity starts at one gap and ends at another." },
-  { key: "marks", title: "Starts? Ends?", short: "Each label scores every gap and every word." },
+  { key: "marks", title: "Starts? Ends?", short: "Each query scores every gap and every word." },
   { key: "pool", title: "Candidates", short: "Combines the most promising starts and ends." },
-  { key: "score", title: "Scoring", short: "Each candidate gets a score per label." },
+  { key: "score", title: "Scoring", short: "Each candidate gets a score per query." },
   { key: "decide", title: "Decision", short: "Threshold, overlaps and final answer." },
 ];
 function buildSteps(n) {
@@ -374,8 +403,10 @@ function clearTextCache() { texCache.forEach((v) => { v.tex.dispose(); v.mat.dis
 // ---------- tower building ----------
 const tokColor = (t) => {
   if (t.kind === "text") return t.first ? "#CBA275" : "#DEC6A4";
+  if (t.ci != null) return t.kind === "marker" ? C.cls : mix(C.cls, "#FFFFFF", 0.55);
   if (t.kind === "marker") return t.label != null ? LC(t.label) : C.slate;
   if (t.lab != null) return mix(LC(t.lab), "#FFFFFF", 0.5);
+  if (t.desc) return "#E9DDC8";
   return C.schema;
 };
 function row(items, widthOf, gap) {
@@ -387,15 +418,16 @@ function row(items, widthOf, gap) {
 const tokW = (t) => clamp(0.28 + 0.1 * t.piece.length, 0.42, 1.6);
 const wordW = (w) => clamp(0.3 + 0.12 * w.text.length, 0.5, 2.8);
 
-function makePlate(st, idx, y, width, depth) {
+function makePlate(st, idx, y, width, depth, cz = 0) {
   const group = new THREE.Group();
   group.position.y = y;
   const base = new THREE.Mesh(new RoundedBoxGeometry(width, 0.16, depth, 3, 0.07), mat(C.plate));
+  base.position.z = cz; // deeper plates grow toward the back
   base.receiveShadow = true;
   base.userData = { kind: "plate", idx };
   group.add(base);
-  const p = { idx, step: st, y, width, depth, group, base, tiles: [], hits: [base], labels: new THREE.Group(), extra: new THREE.Group(),
-    anch: { tok: [], word: [], label: [], gap: [], start: [], end: [], cand: [] }, op: 1, target: 1 };
+  const p = { idx, step: st, y, width, depth, cz, group, base, tiles: [], hits: [base], labels: new THREE.Group(), extra: new THREE.Group(),
+    anch: { tok: [], word: [], label: [], choice: [], gap: [], start: [], end: [], cand: [] }, op: 1, target: 1 };
   group.add(p.labels, p.extra);
   const title = sprite(stepTitle(st), st.key === "layer" ? 0.34 : 0.46, `600 ${st.key === "layer" ? 44 : 58}px "Playfair Display", serif`, C.ink);
   title.center.set(1, 0.5);
@@ -415,11 +447,16 @@ function addTile(p, x, z, w, d, h, color, info) {
 }
 
 function tokenPlate(st, idx, y) {
-  const L = row(D.tokens, tokW, 0.08);
-  const p = makePlate(st, idx, y, L.total + 1.4, 2.3);
-  D.tokens.forEach((t, k) => {
-    p.anch.tok[k] = addTile(p, L.xs[k], 0.1, L.ws[k], 0.5, 0.12, tokColor(t), { type: "tok", k });
-    flatText(p.labels, t.piece, L.xs[k], 0.72, 0.3, L.ws[k]);
+  // one row per schema task at the back, the text in front: the same layout on every token plate
+  const rows = [...D.tasks.map((_, s) => D.tokens.flatMap((t, k) => (t.seg === s ? [k] : []))), D.tokens.flatMap((t, k) => (t.seg == null ? [k] : []))];
+  const Ls = rows.map((ks) => row(ks.map((k) => D.tokens[k]), tokW, 0.08)), ROW = 1.35, extra = ROW * (rows.length - 1);
+  const p = makePlate(st, idx, y, Math.max(...Ls.map((L) => L.total)) + 1.4, 2.3 + extra, -extra / 2);
+  rows.forEach((ks, r) => {
+    const z = 0.1 - ROW * (rows.length - 1 - r);
+    ks.forEach((k, i) => {
+      p.anch.tok[k] = addTile(p, Ls[r].xs[i], z, Ls[r].ws[i], 0.5, 0.12, tokColor(D.tokens[k]), { type: "tok", k });
+      flatText(p.labels, D.tokens[k].piece, Ls[r].xs[i], z + 0.62, 0.3, Ls[r].ws[i]);
+    });
   });
   if (st.key === "layer" || st.key === "embed") {
     p.ring = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.26, 32), new THREE.MeshBasicMaterial({ color: C.ink, transparent: true, side: THREE.DoubleSide }));
@@ -439,15 +476,34 @@ function wordLayout() {
   }
 }
 function wordPlate(st, idx, y, { depth = 3, wz = 0.55, wh = 0.18, labels = false, gapNums = false } = {}) {
-  const LL = row(D.input.labels, (s) => clamp(0.4 + 0.12 * s.length, 0.8, 2.6), 0.3);
-  const p = makePlate(st, idx, y, Math.max(WL.total, labels ? LL.total : 0) + 1.6, depth);
+  // schema rows: span queries grouped by task, then classification choices; whole groups wrap onto rows further back
+  const nameOf = (it) => (it.q != null ? D.queries[it.q].short + (D.queries[it.q].anchor ? " *" : "") : D.choices[it.ci].label);
+  const tileW = (it) => (it.gap ? 0.3 : clamp(0.4 + 0.12 * nameOf(it).length, 0.8, 2.6));
+  const lines = [], maxW = Math.max(WL.total, 14), ROW = 1.7;
+  if (labels) D.groups.forEach((g) => {
+    const its = [...g.q.map((q) => ({ q, g })), ...g.c.map((ci) => ({ ci, g }))], w = its.reduce((a, it) => a + tileW(it) + 0.3, 0);
+    const line = lines.at(-1);
+    if (line && line.w + 0.6 + w <= maxW) { line.items.push({ gap: true }, ...its); line.w += 0.6 + w; } else lines.push({ items: its, w });
+  });
+  const LLs = lines.map((l) => row(l.items, tileW, 0.3)), extra = ROW * Math.max(0, lines.length - 1);
+  const p = makePlate(st, idx, y, Math.max(WL.total, ...LLs.map((L) => L.total)) + 1.6, (labels ? depth + 0.6 : depth) + extra, -extra / 2);
   D.words.forEach((w, j) => {
     p.anch.word[j] = addTile(p, WL.xs[j], wz, WL.ws[j], 0.5, wh, "#CBA275", { type: "word", j });
     flatText(p.labels, w.text, WL.xs[j], wz + 0.54, 0.3, WL.ws[j]);
   });
-  if (labels) D.input.labels.forEach((s, q) => {
-    p.anch.label[q] = addTile(p, LL.xs[q], -0.75, LL.ws[q], 0.5, 0.18, LC(q), { type: "label", q });
-    flatText(p.labels, s, LL.xs[q], -0.2, 0.28, LL.ws[q], LC(q));
+  lines.forEach((l, li) => {
+    const LL = LLs[li], z = -0.75 - ROW * li;
+    l.items.forEach((it, k) => {
+      if (it.gap) return;
+      const color = it.q != null ? LC(it.q) : C.cls;
+      const tile = addTile(p, LL.xs[k], z, LL.ws[k], 0.5, 0.18, color, it.q != null ? { type: "label", q: it.q } : { type: "choice", ci: it.ci });
+      if (it.q != null) p.anch.label[it.q] = tile; else p.anch.choice[it.ci] = tile;
+      flatText(p.labels, nameOf(it), LL.xs[k], z + 0.55, 0.28, LL.ws[k], color);
+    });
+    [...new Set(l.items.map((it) => it.g).filter(Boolean))].forEach((g) => {
+      const ks = l.items.flatMap((it, k) => (it.g === g ? [k] : [])), x0 = LL.xs[ks[0]] - LL.ws[ks[0]] / 2, x1 = LL.xs[ks.at(-1)] + LL.ws[ks.at(-1)] / 2;
+      flatText(p.labels, groupTitle(g), (x0 + x1) / 2, z - 0.65, 0.24, x1 - x0, C.muted);
+    });
   });
   if (gapNums) WL.gx.forEach((x, j) => flatText(p.labels, String(j), x, -0.75, 0.22, null, C.slate, '500 44px "IBM Plex Mono", monospace'));
   return p;
@@ -610,12 +666,14 @@ function flowPairs(a, b) {
     case "tokens": T.forEach((t, k) => {
       if (t.word != null) add(topOf(a.anch.word[t.word]), topOf(b.anch.tok[k]), "#CBA275");
       else if (t.lab != null) add(topOf(a.anch.label[t.lab]), topOf(b.anch.tok[k]), LC(t.lab));
+      else if (t.ci != null) add(topOf(a.anch.choice[t.ci]), topOf(b.anch.tok[k]), C.cls);
     }); break;
     case "embed": case "layer": T.forEach((t, k) => add(topOf(a.anch.tok[k]), topOf(b.anch.tok[k]), tokColor(t))); break;
     case "pick": T.forEach((t, k) => {
       const from = topOf(a.anch.tok[k]);
       if (t.kind === "text" && t.first) add(from, topOf(b.anch.word[t.word]), "#CBA275");
       else if (t.kind === "marker" && t.label != null) add(from, topOf(b.anch.label[t.label]), LC(t.label));
+      else if (t.kind === "marker" && t.ci != null) add(from, topOf(b.anch.choice[t.ci]), C.cls);
       else add(from, null, tokColor(t));
     }); break;
     case "gaps": D.words.forEach((w, j) => { add(topOf(a.anch.word[j]), topOf(b.anch.gap[j]), C.sand); add(topOf(a.anch.word[j]), topOf(b.anch.gap[j + 1]), C.sand); }); break;
@@ -674,10 +732,10 @@ function focusPlate(p) {
     x = (Math.min(...xs) + Math.max(...xs)) / 2;
     span = Math.max(Math.max(...xs) - Math.min(...xs) + 5, 12);
   }
-  const dist = clamp(fitDistance(span, raised ? 7 : 5), 8, 30);
+  const dist = clamp(fitDistance(span, raised ? 7 : Math.max(5, p.depth + 1.5)), 8, 40);
   const visW = 2 * dist * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect;
   const half = Math.max(0, p.width / 2 - visW / 2 + 1.5);
-  const tgt = new THREE.Vector3(clamp(x, -half, half), p.y + (raised ? 0.8 : 0.3), 0.2);
+  const tgt = new THREE.Vector3(clamp(x, -half, half), p.y + (raised ? 0.8 : 0.3), 0.2 + p.cz);
   flyTo(tgt.clone().addScaledVector(new THREE.Vector3(0, 1, 1).normalize(), dist), tgt);
   aimSun(tgt, Math.max(visW, p.width));
 }
@@ -745,8 +803,8 @@ function buildMap() {
     const m = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 14), mat(tokColor(t)));
     m.castShadow = true;
     m.userData = { kind: "tile", map: true, info: { type: "tok", k } };
-    const name = t.kind === "marker" && t.label != null ? `[E] ${D.input.labels[t.label]}` : t.kind === "text" && t.first ? D.words[t.word].text : t.kind === "marker" ? t.piece : null;
-    if (name) { m.userData.tag = sprite(name, t.kind === "marker" ? 0.32 : 0.27, `${t.kind === "marker" ? 600 : 500} 46px Inter, sans-serif`, t.label != null ? LC(t.label) : C.ink); mapG.add(m.userData.tag); }
+    const name = t.kind === "marker" && t.label != null ? `${t.piece} ${D.input.labels[t.label]}` : t.kind === "marker" && t.ci != null ? `[L] ${D.choices[t.ci].label}` : t.kind === "text" && t.first ? D.words[t.word].text : t.kind === "marker" ? t.piece : null;
+    if (name) { m.userData.tag = sprite(name, t.kind === "marker" ? 0.32 : 0.27, `${t.kind === "marker" ? 600 : 500} 46px Inter, sans-serif`, t.label != null ? LC(t.label) : t.ci != null ? C.cls : C.ink); mapG.add(m.userData.tag); }
     mapG.add(m); mapPts.push(m);
     const pts = D.layers.map((L) => new THREE.Vector3(...L.pos[k]).multiplyScalar(MAP_SCALE));
     const trail = new THREE.Line(new THREE.BufferGeometry().setFromPoints(new THREE.CatmullRomCurve3(pts).getPoints(80)), new THREE.LineBasicMaterial({ color: tokColor(t), transparent: true, opacity: t.kind === "schema" ? 0.12 : 0.3 }));
@@ -810,7 +868,9 @@ function tipHTML(o) {
   const u = o.userData;
   if (u.kind === "plate") { const st = STEPS[u.idx]; return `<b>${esc(stepTitle(st))}</b><span>${esc(GROUPS[st.g].short)}</span><span>Click to see it up close.</span>`; }
   const i = u.info, q = S.label, L = D.input.labels;
-  const kindName = (t) => t.kind === "text" ? (t.first ? "First piece of a word" : "Text piece (continues the word)") : t.kind === "marker" ? (t.label != null ? `Marker for the label “${esc(L[t.label])}”` : "Special marker") : t.lab != null ? `Name of the label “${esc(L[t.lab])}”` : "Part of the schema";
+  const kindName = (t) => t.kind === "text" ? (t.first ? "First piece of a word" : "Text piece (continues the word)")
+    : t.kind === "marker" ? (t.label != null ? `Marker of the query “${esc(L[t.label])}”` : t.ci != null ? `Classification label “${esc(D.choices[t.ci].label)}” of “${esc(D.choices[t.ci].task)}”` : MARKERS.find(([m]) => m === t.piece)?.[1] ?? "Special marker")
+    : t.lab != null ? `Name of the query “${esc(L[t.lab])}”` : t.ci != null ? `Name of the classification label “${esc(D.choices[t.ci].label)}”` : t.desc ? "Part of a label description" : "Part of the schema";
   if (i.type === "tok") {
     const t = D.tokens[i.k], st = u.p?.step;
     let extra = "";
@@ -827,7 +887,8 @@ function tipHTML(o) {
     if (key === "decide" && o.userData.ent) extra = `Part of “${esc(o.userData.ent.text)}” → ${esc(L[o.userData.ent.label])} (${f2(o.userData.ent.score)})`;
     return `<b>${esc(w.text)}</b><span>Word ${i.j + 1} of ${D.W}</span>${extra ? `<span>${extra}</span>` : ""}`;
   }
-  if (i.type === "label") return `<b>${esc(L[i.q])}</b><span>Label ${i.q + 1}. Click to follow it.</span>`;
+  if (i.type === "label") return `<b>${esc(L[i.q])}</b><span>${qDesc(D.queries[i.q])}. Click to follow it.</span>`;
+  if (i.type === "choice") { const c = D.choices[i.ci]; return `<b>${esc(c.label)}</b><span>Label of the classification “${esc(c.task)}”. Its vector goes to the classification head.</span>`; }
   if (i.type === "gap") return `<b>Gap ${i.j}</b><span>${gapName(i.j)}</span>`;
   if (i.type === "start") return `<b>Gap ${i.j} · starts</b><span>${gapName(i.j)}</span><span>Does a “${esc(L[q])}” start here? ${f2(D.boundary.start[q][i.j])}</span>`;
   if (i.type === "end") return `<b>Gap ${i.j} · ends</b><span>${gapName(i.j)}</span><span>Does a “${esc(L[q])}” end here? ${f2(D.boundary.end[q][i.j])}</span>`;
@@ -883,6 +944,8 @@ function frame(now) {
     if (t === 1) tween = null;
   }
   controls.update();
+  const dist = camera.position.distanceTo(controls.target); // fog follows the zoom, so a wide tower never fades out
+  scene.fog.near = dist + 30; scene.fog.far = dist * 2.5 + 110;
   if (S.view === "flow") {
     plates.forEach((p) => {
       const d = p.target - p.op;
@@ -925,6 +988,19 @@ function renderStepper() {
 
 // ---------- panel ----------
 const labChip = (q) => `<span class="lab" style="--c:${LC(q)}">${esc(D.input.labels[q])}</span>`;
+const shortChip = (q) => `<span class="lab" style="--c:${LC(q)}">${esc(D.queries[q].short)}${D.queries[q].anchor ? " *" : ""}</span>`;
+const choiceChip = (ci) => `<span class="lab" style="--c:${C.cls}">${esc(D.choices[ci].label)}</span>`;
+const groupTitle = (g) => (g.kind === "entity" ? "entities" : `${g.name} · ${g.kind}`);
+const qDesc = (q) => ({ entity: "Entity type", attribute: `Label of the attribute “${esc(q.group)}”, scored only at the entities found`,
+  relation: `Role “${esc(q.role)}” of the relation “${esc(q.task)}”`, structure: `Field of the structure “${esc(q.task)}”${q.anchor ? " (anchor)" : ""}` }[q.kind]);
+function otherAnswers() {
+  const L = D.input.labels, li = [];
+  D.classifications.forEach((c) => li.push(`<li><span>${esc(c.task)}</span><span>${c.chosen.map((j) => choiceChip(D.choices.findIndex((x) => x.task === c.task && x.j === j))).join(" ")}</span></li>`));
+  D.attributes.forEach((a) => a.items.forEach((it) => { const j = argmax(it.probs); li.push(`<li><span>“${esc(D.input.text.slice(it.start, it.end))}” · ${esc(a.group)}</span><span>${esc(a.labels[j])} <span class="num">${f2(it.probs[j])}</span></span></li>`); }));
+  D.relations.filter((r) => r.kept).forEach((r) => li.push(`<li><span>“${esc(r.head_text)}” → “${esc(r.tail_text)}”</span><span>${esc(r.type)} <span class="num">${f2(r.prob)}</span></span></li>`));
+  D.records.forEach((g) => g.result.forEach((rec) => li.push(`<li><span>${esc(g.name)}</span><span>${Object.entries(rec).map(([k, v]) => `${esc(k)}: “${esc(v?.text ?? "—")}”`).join(", ")}</span></li>`)));
+  return li.length ? `<h3>Other answers</h3><ul class="list">${li.join("")}</ul>` : "";
+}
 const pc = (t, id = false) => `<span class="pc ${t.kind}">${esc(t.piece)}${id ? `<span class="id">${t.id}</span>` : ""}</span>`;
 const strip = (vals) => { const m = Math.max(...vals.map(Math.abs)) || 1; return `<div class="strip">${vals.map((v) => `<i style="background:${diverge(v / m)}"></i>`).join("")}</div>`; };
 const bars = (rows) => `<div class="bars">${rows.map(([name, v, max = 1]) => `<span>${name}</span><div class="bar"><i style="width:${clamp((v / max) * 100, 0, 100)}%"></i></div><span class="num">${f2(v)}</span>`).join("")}</div>`;
@@ -952,27 +1028,29 @@ function highlighted(ents) {
 
 const CONTENT = {
   overview: {
-    what: () => `<p>This is <b>GLiNER2.5</b> from the inside: a model that finds the kinds of information you ask for in a text (people, companies, dates…), even kinds it never saw during training.</p>
-      <p>Each plate of the tower is a stage. Your sentence enters at the bottom, climbs plate by plate and leaves at the top with the entities marked. In between there are <b>${INFO.layers} Transformer layers</b>, where each piece of the text looks at the others to understand its context.</p>
+    what: () => `<p>This is <b>GLiNER2.5</b> from the inside. You write a schema (entity types, attributes, relations, a structure, classification labels) and the model answers all of it <b>in one pass</b>, even for things it never saw during training.</p>
+      <p>Each plate of the tower is a stage. Your sentence and your schema enter at the bottom and climb plate by plate. In between there are <b>${INFO.layers} Transformer layers</b>, where each piece of the text looks at the others to understand its context.</p>
       <div class="note key">Press ▶ (below) to follow your sentence step by step, or pick a stage in the left column. Hover over any piece to see what it is.</div>
       <p>The small balls that travel between plates are information passing from one stage to the next.</p>`,
-    mine: () => `<p>Result for your sentence:</p>${highlighted(D.entities)}<p class="mono" style="margin-top:10px">${D.entities.length} entities · ${D.ms} ms of model time</p>`,
+    mine: () => `<p>Result for your sentence:</p>${highlighted(D.entities)}${otherAnswers()}<p class="mono" style="margin-top:10px">${D.entities.length} entities · ${D.ms} ms of model time</p>`,
     tech: () => techModel(),
   },
   input: {
-    what: () => `<p>GLiNER2.5 has no fixed list of entity types: <b>you choose them</b>. Before anything else, the model joins the labels and the text into one sequence.</p>
-      <p>This way it reads <i>what to look for</i> and <i>where to look</i> at the same time. That is what lets it find types it never saw in training (<i>zero-shot</i> learning).</p>
-      <div class="note">Analogy: it is like handing someone a form with the fields “person”, “company”, “city”… together with the document. They read both at once and fill in the fields.</div>`,
+    what: () => `<p>GLiNER2.5 has no fixed list of things to find: <b>you write a schema</b>. It can mix five tasks: entity types, attributes of those entities, relations between them, structured records and labels for the whole text.</p>
+      <p>The model turns the schema into text and puts it in front of your sentence. It reads <i>what to look for</i> and <i>where to look</i> together, in <b>one pass</b>, however many tasks you ask for. That is also why it can find types it never saw in training (<i>zero-shot</i>).</p>
+      <div class="note">Analogy: it is like handing someone a form with fields (“person”, “company”…), a few tick boxes (“topic: business or sports?”) and the document, all at once.</div>`,
     mine: () => {
-      const seq = D.tokens.map((t) => t.kind === "marker" ? `<b ${t.label != null ? `style="--c:${LC(t.label)}"` : ""}>${esc(t.piece)}</b>` : esc(t.piece.replaceAll("▁", " "))).join("");
-      return `<p>Your sentence has <b>${D.W} words</b> and you are looking for <b>${D.Q} labels</b>: ${D.input.labels.map((_, q) => labChip(q)).join(" ")}</p>
-        <p>This is what the model actually reads:</p><div class="seq">${seq}</div>
-        <dl class="legend"><dt>[P]</dt><dd>A task starts. Here it is <code>entities</code>: find entities.</dd>
-        <dt>[E]</dt><dd>A label goes here. Its final vector becomes “the question” asked of the text.</dd>
-        <dt>[SEP_TEXT]</dt><dd>The instructions end here and your text begins.</dd></dl>`;
+      const piece = (t) => t.kind === "marker" ? `<b style="--c:${t.label != null ? LC(t.label) : t.ci != null ? C.cls : C.slate}">${esc(t.piece)}</b>` : esc(t.piece.replaceAll("▁", " "));
+      const segs = D.tasks.map((task, s) => `<span class="segl"><small>${esc(TASK_NAME[task.type] ?? task.type)}</small>${D.tokens.filter((t) => t.seg === s).map(piece).join("")}</span>`).join("");
+      const text = D.tokens.slice(D.tokens.findIndex((t) => t.piece === "[SEP_TEXT]")).map(piece).join("");
+      const used = new Set(D.tokens.filter((t) => t.kind === "marker").map((t) => t.piece));
+      return `<p>Your sentence has <b>${D.W} words</b>. Your schema asks <b>${D.Q + D.choices.length} questions</b> in <b>${D.tasks.length} tasks</b>:</p>
+        ${D.groups.map((g) => `<p style="margin:0 0 6px"><span class="mono" style="color:var(--muted)">${esc(groupTitle(g))}</span> ${g.q.map((q) => shortChip(q)).join(" ")}${g.c.map((ci) => choiceChip(ci)).join(" ")}</p>`).join("")}
+        <p style="margin-top:12px">This is what the model actually reads, one task per line:</p><div class="seq">${segs}<span class="segl"><small>Text</small>${text}</span></div>
+        <dl class="legend">${MARKERS.filter(([m]) => used.has(m)).map(([m, d]) => `<dt>${m}</dt><dd>${d}</dd>`).join("")}</dl>`;
     },
-    tech: () => `<dl class="tech"><dt>Schema</dt><dd><code>( [P] entities ( [E] label₁ [E] label₂ … ) ) [SEP_TEXT] text</code></dd>
-      <dt>Special tokens</dt><dd>[P], [E], [C], [R], [L], [SEP_STRUCT], [SEP_TEXT], [DESCRIPTION] are added to the vocabulary. Structure fields ([C]), relation roles ([R]) and classification labels ([L]) go through the same encoder.</dd>
+    tech: () => `<dl class="tech"><dt>Schema</dt><dd><code>( [P] task ( [E] a [E] b … ) ) [SEP_STRUCT] ( [P] task ( [R] head [R] tail ) ) … [SEP_TEXT] text</code>. One segment per task: structures first, then entities, relations and classifications.</dd>
+      <dt>Queries</dt><dd>Every <code>[E]</code>, <code>[C]</code> and <code>[R]</code> marker becomes one span query (${D.Q} here). Every <code>[L]</code> marker becomes one classification choice (${D.choices.length} here).</dd>
       <dt>Code</dt><dd class="file">gliner2/processor.py · schema → tokens</dd></dl>`,
   },
   tokens: {
@@ -997,10 +1075,11 @@ const CONTENT = {
       <div class="note">This embedding table is huge: ${nf(INFO.params.embeddings)} numbers, <b>${pctOf(INFO.params.embeddings, INFO.params.total)}%</b> of the whole model. It is the dictionary: one row per piece.</div>`,
     mine: () => {
       const L0 = D.layers[0], f = S.focusTok, t = D.tokens[f];
-      const same = D.Q > 1 && D.markers.every((k) => L0.strip[k].join() === L0.strip[D.markers[0]].join());
+      const mk = D.tokens.flatMap((t, k) => (t.kind === "marker" && (t.label != null || t.ci != null) ? [k] : []));
+      const same = [...new Set(mk.map((k) => D.tokens[k].piece))].filter((m) => { const ks = mk.filter((k) => D.tokens[k].piece === m); return ks.length > 1 && ks.every((k) => L0.strip[k].join() === L0.strip[ks[0]].join()); });
       const show = [...new Set([f, ...D.markers, ...D.words.map((w) => w.token)])].slice(0, 14);
       return `<p>Embedding of ${pc(t)} (the first 32 of ${INFO.hidden} numbers; terracotta = positive, slate = negative):</p>${strip(L0.strip[f])}
-        ${same ? `<div class="note key">The ${D.Q} <code>[E]</code> markers have <b>exactly the same embedding</b>: they do not know yet which label they belong to. They find out by looking around in the next layers.</div>` : ""}
+        ${same.length ? `<div class="note key">All ${same.map((m) => `<code>${m}</code>`).join(" and all ")} markers start with <b>exactly the same embedding</b>: they do not know yet which query they belong to. They find out by looking around in the next layers.</div>` : ""}
         <h3>More embeddings</h3><div class="strips">${show.map((k) => `<span>${pc(D.tokens[k])}${D.tokens[k].label != null ? " " + labChip(D.tokens[k].label) : ""}</span>${strip(L0.strip[k])}`).join("")}</div>
         <p style="margin-top:10px;color:var(--muted);font-size:13px">Click any piece in the 3D view to see its embedding.</p>`;
     },
@@ -1013,7 +1092,7 @@ const CONTENT = {
       <ol><li><b>Attention.</b> Each piece asks the others “who helps me understand myself?” and mixes in their information according to the answer. The terracotta lines in the 3D view show what the selected piece looks at.</li>
       <li><b>Processing</b> (<i>feed-forward</i> network). Each piece works on its own with what it has gathered.</li></ol>
       <p>This repeats ${INFO.layers} times. Early layers capture form and neighbours; later layers capture meaning and role in the sentence.</p>
-      <div class="note key">The labels travel together with the text. That is why the marker of ${labChip(S.label)} can look straight at the words of your sentence, and its focus gets sharper layer by layer.</div>
+      <div class="note key">The schema travels together with the text. That is why the marker of ${labChip(S.label)} can look straight at the words of your sentence, and its focus gets sharper layer by layer.</div>
       <p style="color:var(--muted);font-size:13px">You are at layer ${st.layer} of ${INFO.layers}. The height of each piece shows how much the selected piece (in black) looks at it.</p>`,
     mine: (st) => {
       const f = S.focusTok, att = D.layers[st.layer].attn[f], top = topAttn(st.layer);
@@ -1036,19 +1115,21 @@ const CONTENT = {
       <dt>Code</dt><dd class="file">transformers · DebertaV2Layer (layer ${st.layer})</dd></dl>`,
   },
   pick: {
-    what: () => `<p>After the ${INFO.layers} layers, the model goes back to <b>words</b>. Each word is represented by its <b>first piece</b> (the one with <code>▁</code>). That piece has already absorbed the context of the others.</p>
-      <p>Each label is represented by its <code>[E]</code> marker. That vector is <b>the question</b> asked of the text: “where is there a ${esc(D.input.labels[S.label])}?”.</p>
-      <p>The other pieces (word endings and the schema) have done their job and are dropped. In the 3D view, the balls that rise and fade are those pieces.</p>`,
+    what: () => `<p>After the ${INFO.layers} layers, the model goes back to <b>words</b>. Each word is represented by its <b>first piece</b> (the one with <code>▁</code>), which has already absorbed the context of the others.</p>
+      <p>Each marker becomes a vector too, and there are two kinds:</p>
+      <ul><li><b>Span queries</b> (<code>[E]</code>, <code>[C]</code>, <code>[R]</code>) ask “where in the text is there a ${esc(D.queries[S.label].short)}?”. Entity types, attribute labels, relation roles and structure fields all ask this same kind of question, so they all go through the same next stages.</li>
+      ${D.choices.length ? `<li><b>Classification choices</b> (<code>[L]</code>) ask “does the whole text fit this label?”. They go to a small separate head.</li>` : ""}</ul>
+      <p>The other pieces (word endings and the rest of the schema) have done their job and are dropped. In the 3D view, the balls that rise and fade are those pieces.</p>`,
     mine: () => {
       const sim = D.layers.at(-1).label_sim;
       return `<p>Word ← chosen piece:</p><div>${D.words.map((w) => `<span class="wordgroup">${pc(D.tokens[w.token])}<small>${esc(w.text)}</small></span>`).join("")}</div>
-        <h3>Similarity between each label and each word</h3><p style="font-size:13px;color:var(--muted)">Cosine similarity after the last layer. It is only a hint: the next stages make the real decision.</p>
+        <h3>Similarity between each query and each word</h3><p style="font-size:13px;color:var(--muted)">Cosine similarity after the last layer. It is only a hint: the next stages make the real decision.</p>
         <table class="heat"><thead><tr><th></th>${D.words.map((w) => `<th title="${esc(w.text)}">${esc(w.text.slice(0, 4))}</th>`).join("")}</tr></thead><tbody>
         ${D.input.labels.map((l, q) => { const r = sim[q], mn = Math.min(...r), mx = Math.max(...r); return `<tr><th>${esc(l)}</th>${r.map((v, j) => `<td style="background:${ramp((v - mn) / (mx - mn || 1), LC(q))}" title="${esc(D.words[j].text)}: ${f2(v)}"></td>`).join("")}</tr>`; }).join("")}
         </tbody></table>`;
     },
     tech: () => `<dl class="tech"><dt>Pooling</dt><dd><code>token_pooling = "first"</code>: the model takes the vector of the first piece of each word.</dd>
-      <dt>Outputs</dt><dd>Text <code>[1, ${D.W}, ${INFO.hidden}]</code> and queries (<code>[E]</code> markers) <code>[1, ${D.Q}, ${INFO.hidden}]</code>.</dd>
+      <dt>Outputs</dt><dd>Text <code>[1, ${D.W}, ${INFO.hidden}]</code>, span queries <code>[1, ${D.Q}, ${INFO.hidden}]</code>${D.choices.length ? ` and classification choices <code>[${D.choices.length}, ${INFO.hidden}]</code>` : ""}.</dd>
       <dt>Code</dt><dd class="file">gliner2/models/boundary/model.py · _encode_core</dd></dl>`,
   },
   gaps: {
@@ -1069,9 +1150,9 @@ const CONTENT = {
       <dt>Code</dt><dd class="file">gliner2/models/boundary/encoding.py · BoundaryEncoder</dd></dl>`,
   },
   marks: {
-    what: () => `<p>Now the question comes in. The label vector is compared with every gap and every word. Out come three scores from 0 to 1:</p>
+    what: () => `<p>Now the question comes in. The query vector is compared with every gap and every word. Out come three scores from 0 to 1:</p>
       <ul><li><b style="color:var(--terra)">Starts</b>: does an entity of this type start here?</li><li><b style="color:var(--slate)">Ends</b>: does it end here?</li><li><b style="color:var(--olive)">Inside</b>: is this word part of one?</li></ul>
-      <p>In the 3D view: terracotta bars = starts, slate bars = ends, word height = inside. Switch the label above to see how they change.</p>`,
+      <p>In the 3D view: terracotta bars = starts, slate bars = ends, word height = inside. Switch the query above to see how they change.</p>`,
     mine: () => {
       const q = S.label, B = D.boundary, s = argmax(B.start[q]), e = argmax(B.end[q]);
       const cell = (v, c) => `<td style="background:${ramp(v, c)}">${v >= 0.5 ? f2(v) : ""}</td>`;
@@ -1090,7 +1171,7 @@ const CONTENT = {
   },
   pool: {
     what: () => `<p>Trying every possible stretch is expensive. With ${D.W} words there are ${nf(D.pool.possible)}; a 500-word document would have more than 125,000.</p>
-      <p>So the model keeps the <b>${INFO.pool_top_k} most promising starts</b> and the <b>${INFO.pool_top_k} most promising ends</b> (of any label), combines them and keeps at most <b>${nf(INFO.pool_size)} stretches</b>. All labels share this bag of candidates.</p>
+      <p>So the model keeps the <b>${INFO.pool_top_k} most promising starts</b> and the <b>${INFO.pool_top_k} most promising ends</b> (of any query), combines them and keeps at most <b>${nf(INFO.pool_size)} stretches</b>. All queries share this bag of candidates, whatever their task.</p>
       ${D.pool.kept === D.pool.possible ? `<div class="note">Your sentence is short: all ${D.pool.possible} possible stretches fit. In long texts this filter is decisive.</div>` : ""}
       <div class="note key">If an entity does not get into the bag, the model can no longer find it, however good its score would be later. It is a coverage limit.</div>`,
     mine: () => {
@@ -1099,30 +1180,30 @@ const CONTENT = {
         <p>Each arc in the 3D view is a candidate: it goes from the gap where it starts to the gap where it ends. These are the 10 with the best prior score (start–end fit, before looking at the label):</p>
         <ul class="list">${top.map((c) => `<li><span>“${esc(c.text)}”</span><span class="num">${c.s}→${c.e} · ${f2(c.prior)}</span></li>`).join("")}</ul>`;
     },
-    tech: () => `<dl class="tech"><dt>DocumentCandidatePool</dt><dd>Maximum of the start/end logits over the labels, top-${INFO.pool_top_k} per side, Cartesian product with end > start, start·end compatibility, a minimum quota per label and deduplication.</dd>
+    tech: () => `<dl class="tech"><dt>DocumentCandidatePool</dt><dd>Maximum of the start/end logits over the queries, top-${INFO.pool_top_k} per side, Cartesian product with end > start, start·end compatibility, a minimum quota per query and deduplication.</dd>
       <dt>Settings</dt><dd><code>pool_boundary_top_k = ${INFO.pool_top_k}</code>, <code>pool_size = ${INFO.pool_size}</code>. You can set them when you load the model.</dd>
       <dt>Code</dt><dd class="file">gliner2/models/boundary/pool.py · DocumentCandidatePool</dd></dl>`,
   },
   score: {
     what: () => `<p>Each candidate becomes a vector that sums up <b>where it starts, where it ends, how long it is and what it contains</b>.</p>
-      <p>That vector is compared with each label, and out comes a probability from 0 to 1: is “${esc(D.candidates[0]?.text ?? "")}” a ${esc(D.input.labels[S.label])}? The starts, ends and inside scores from stage 7 are added to it.</p>
+      <p>That vector is compared with each query, and out comes a probability from 0 to 1: is “${esc(D.candidates[0]?.text ?? "")}” a ${esc(D.input.labels[S.label])}? The starts, ends and inside scores from stage 7 are added to it.</p>
       <p>In the 3D view, the higher the arc, the higher the probability for ${labChip(S.label)}. Thick arcs pass the threshold (${f2(D.input.threshold)}).</p>`,
     mine: () => {
       const thr = D.input.threshold, top = D.candidates.slice(0, 12);
-      return `<p>The 12 candidates with the highest score for any label:</p><div style="overflow-x:auto"><table class="heat"><thead><tr><th></th>${D.input.labels.map((l) => `<th style="font-family:var(--sans);font-size:11px">${esc(l)}</th>`).join("")}</tr></thead><tbody>
+      return `<p>The 12 candidates with the highest score for any query:</p><div style="overflow-x:auto"><table class="heat"><thead><tr><th></th>${D.input.labels.map((l) => `<th style="font-family:var(--sans);font-size:11px">${esc(l)}</th>`).join("")}</tr></thead><tbody>
         ${top.map((c) => `<tr><th>“${esc(c.text)}”</th>${c.probs.map((v, q) => `<td class="v ${v >= thr ? "hit" : ""}" style="background:${v >= thr ? LC(q) : ramp(v * 0.8, LC(q))}">${f2(v)}</td>`).join("")}</tr>`).join("")}
         </tbody></table></div><p style="font-size:13px;color:var(--muted)">Solid fill = passes the threshold ${f2(thr)}.</p>`;
     },
     tech: () => `<dl class="tech"><dt>SharedPoolScorer</dt><dd>Candidate vector = start + end + length features (log, relative, 1/√) + prior score + content (mean and log-sum-exp of the stretch), with LayerNorm.</dd>
       <dt>Score</dt><dd>Dot product with the query + an MLP modulated by the label (FiLM: γ, β) + start/end logits + mean “inside”. Probability = sigmoid.</dd>
-      <dt>Shape</dt><dd><code>[1, ${D.pool.kept}, ${D.Q}]</code> (candidates × labels). Parameters: ${nf(INFO.params.scorer)}.</dd>
+      <dt>Shape</dt><dd><code>[1, ${D.pool.kept}, ${D.Q}]</code> (candidates × queries). Parameters: ${nf(INFO.params.scorer)}.</dd>
       <dt>Code</dt><dd class="file">gliner2/models/boundary/pool.py · SharedPoolScorer</dd></dl>`,
   },
   decide: {
     what: () => `<p>Three filters remain:</p>
-      <ol><li><b>Is there any?</b> A detector per label can say “there is none in this text” and drop the whole label.</li>
+      <ol><li><b>Is there any?</b> A detector per query can say “there is none in this text” and drop the whole query.</li>
       <li><b>Threshold.</b> Only candidates with a score ≥ ${f2(D.input.threshold)} pass. Move the threshold at the top and analyze again.</li>
-      <li><b>Overlaps.</b> Within one label, if two stretches overlap, the non-overlapping combination with the highest total score wins.</li></ol>
+      <li><b>Overlaps.</b> Within one query, if two stretches overlap, the non-overlapping combination with the highest total score wins.</li></ol>
       <p>What is left is the answer, with the exact position of each entity in the original text.</p>`,
     mine: () => {
       const thr = D.input.threshold, abs = D.abstention_threshold;
@@ -1130,28 +1211,28 @@ const CONTENT = {
       D.candidates.forEach((c) => c.probs.forEach((v, q) => { if (v >= thr && !c.final.includes(q)) lost.push([c, q, v]); }));
       const twice = spanGroups(D.entities).filter((g) => g.labels.length > 1);
       return `${highlighted(D.entities)}
-        ${twice.length ? `<div class="note key">“${esc(D.input.text.slice(twice[0].start, twice[0].end))}” comes out with ${twice[0].labels.length} labels. This model resolves overlaps within each label, but not between different labels. If you want only one, decide afterwards, for example by keeping the highest score.</div>` : ""}
+        ${twice.length ? `<div class="note key">“${esc(D.input.text.slice(twice[0].start, twice[0].end))}” comes out with ${twice[0].labels.length} labels. This model resolves overlaps within each query, but not between different queries. If you want only one, decide afterwards, for example by keeping the highest score.</div>` : ""}
         <ul class="list" style="margin-top:12px">${D.entities.map((e) => `<li><span>${labChip(e.label)} “${esc(e.text)}”</span><span class="num">${f2(e.score)}</span></li>`).join("") || "<li>No entity passes the threshold.</li>"}</ul>
-        ${D.null ? `<h3>Is there any of each type?</h3>${bars(D.input.labels.map((l, q) => [labChip(q), 1 - D.null[q]]))}<p style="font-size:13px;color:var(--muted);margin-top:6px">If it falls below ${f2(1 - abs)}, that label is dropped.</p>` : ""}
-        ${lost.length ? `<h3>Passed the threshold but were discarded</h3><ul class="list">${lost.slice(0, 8).map(([c, q, v]) => `<li><span>${labChip(q)} “${esc(c.text)}”</span><span class="num">${f2(v)} · ${D.null && D.null[q] > abs ? "label dropped" : "overlaps"}</span></li>`).join("")}</ul>` : ""}`;
+        ${D.null ? `<h3>Is there any for each query?</h3>${bars(D.input.labels.map((l, q) => [labChip(q), 1 - D.null[q]]))}<p style="font-size:13px;color:var(--muted);margin-top:6px">If it falls below ${f2(1 - abs)}, that query is dropped.</p>` : ""}
+        ${lost.length ? `<h3>Passed the threshold but were discarded</h3><ul class="list">${lost.slice(0, 8).map(([c, q, v]) => `<li><span>${labChip(q)} “${esc(c.text)}”</span><span class="num">${f2(v)} · ${D.null && D.null[q] > abs ? "query dropped" : "overlaps"}</span></li>`).join("")}</ul>` : ""}`;
     },
-    tech: () => `<dl class="tech"><dt>Abstention</dt><dd><code>null_projection</code> per label; the label is dropped if its probability is above ${f2(D.abstention_threshold)}.</dd>
-      <dt>Overlaps</dt><dd><code>overlap_policy = "flat"</code>: per label, it selects the non-overlapping intervals with the maximum sum of scores. Overlaps between different labels are not resolved here.</dd>
+    tech: () => `<dl class="tech"><dt>Abstention</dt><dd><code>null_projection</code> per query; the query is dropped if its probability is above ${f2(D.abstention_threshold)}.</dd>
+      <dt>Overlaps</dt><dd><code>overlap_policy = "flat"</code>: per query, it selects the non-overlapping intervals with the maximum sum of scores. Overlaps between different queries are not resolved here.</dd>
       <dt>Positions</dt><dd>The start and end maps of each word translate gaps into character offsets.</dd>
       <dt>Code</dt><dd class="file">gliner2/models/boundary/engine.py · _decode_entities</dd></dl>`,
   },
   map: {
     what: () => `<p>Each point is a piece of your input. Its ${INFO.hidden} numbers cannot be drawn, so we sum them up in 3 (principal component analysis). <b>Nearby pieces = similar representations.</b></p>
-      <p>Move the layer slider or press ▶. In the embeddings (layer 0) the <code>[E]</code> markers sit on the same point, because they do not know yet which label they belong to. Layer by layer they move apart, and the text reorganizes by its role in the sentence.</p>
-      <div class="note">It is a projection: distances in 3D are approximate. The thin line joins the selected label with the word it is most similar to, measured with the real ${INFO.hidden} numbers.</div>`,
+      <p>Move the layer slider or press ▶. In the embeddings (layer 0), markers of the same kind (all <code>[E]</code>, all <code>[R]</code>…) sit on the same point, because they do not know yet which query they belong to. Layer by layer they move apart, and the text reorganizes by its role in the sentence.</p>
+      <div class="note">It is a projection: distances in 3D are approximate. The thin line joins the selected query with the word it is most similar to, measured with the real ${INFO.hidden} numbers.</div>`,
     mine: () => {
       const L = D.layers[S.mapLayer];
-      return `<p>In ${S.mapLayer === 0 ? "the embeddings (layer 0)" : `layer ${S.mapLayer}`}, each label is most similar to:</p>
+      return `<p>In ${S.mapLayer === 0 ? "the embeddings (layer 0)" : `layer ${S.mapLayer}`}, each query is most similar to:</p>
         <ul class="list">${D.input.labels.map((l, q) => { const j = argmax(L.label_sim[q]); return `<li><span>${labChip(q)} → “${esc(D.words[j].text)}”</span><span class="num">${f2(L.label_sim[q][j])}</span></li>`; }).join("")}</ul>
-        ${S.mapLayer === 0 ? `<p style="font-size:13px;color:var(--muted);margin-top:8px">In layer 0 every label gives the same answer: their markers are identical.</p>` : ""}`;
+        ${S.mapLayer === 0 ? `<p style="font-size:13px;color:var(--muted);margin-top:8px">In layer 0, queries with the same kind of marker give the same answer: their markers are identical.</p>` : ""}`;
     },
     tech: () => `<dl class="tech"><dt>Projection</dt><dd>3D PCA of each layer's normalized vectors, aligned with the previous layer (Procrustes) so the points move smoothly.</dd>
-      <dt>Similarity</dt><dd>Cosine similarity between the vector of the <code>[E]</code> marker and the first piece of each word, in ${INFO.hidden} dimensions.</dd></dl>`,
+      <dt>Similarity</dt><dd>Cosine similarity between the vector of the query marker and the first piece of each word, in ${INFO.hidden} dimensions.</dd></dl>`,
   },
 };
 function techModel() {
@@ -1160,17 +1241,17 @@ function techModel() {
     <dt>Size</dt><dd>${nf(P.total)} parameters: embeddings ${pctOf(P.embeddings, P.total)}%, Transformer layers ${pctOf(P.encoder - P.embeddings, P.total)}%, boundary head ${((100 * (P.boundary_encoder + P.query_head + P.pool + P.scorer)) / P.total).toFixed(1)}%.</dd>
     <dt>Encoder</dt><dd>${INFO.layers} layers, ${INFO.hidden} dimensions, ${INFO.heads} attention heads.</dd>
     <dt>Head</dt><dd>Gaps of ${INFO.boundary_dim} dims · bag of top-${INFO.pool_top_k} × top-${INFO.pool_top_k}, at most ${INFO.pool_size} candidates.</dd>
-    <dt>Not shown</dt><dd>The same model also classifies text and extracts relations and records; this walkthrough covers entity extraction only.</dd></dl>`;
+    <dt>Not drawn yet</dt><dd>The tower follows the span path that entity types, attribute labels, relation roles and structure fields share. The classification, attribute, relation and record heads on top of it are summed up in “With your sentence”.</dd></dl>`;
 }
 function renderPanel() {
   if (!INFO) return;
-  $("#follow").innerHTML = D ? `<span>Following label:</span>${D.input.labels.map((l, q) => `<button type="button" class="lab ${q === S.label ? "on" : ""}" style="--c:${LC(q)}" data-q="${q}">${esc(l)}</button>`).join("")}` : "";
+  $("#follow").innerHTML = D ? `<span>Following:</span>${D.groups.filter((g) => g.q.length).map((g) => `<span class="fg"><small>${esc(groupTitle(g))}</small>${g.q.map((q) => `<button type="button" class="lab ${q === S.label ? "on" : ""}" style="--c:${LC(q)}" data-q="${q}">${esc(D.queries[q].short)}</button>`).join("")}</span>`).join("")}` : "";
   if (!D) return;
   const key = S.view === "map" ? "map" : S.overview ? "overview" : STEPS[S.step].key;
   const st = STEPS[S.step], g = GROUPS[st.g];
   $("#kicker").textContent = S.view === "map" ? "Alternative view" : S.overview ? `${STEPS.length} steps · ${GROUPS.length} stages` : `Step ${S.step + 1} of ${STEPS.length}`;
   $("#ptitle").textContent = S.view === "map" ? "Meaning map" : S.overview ? "A sentence travels through the model" : stepTitle(st) + (st.key === "layer" ? " · Transformer" : "");
-  $("#plede").textContent = S.view === "map" ? "Where the model places each piece, layer by layer." : S.overview ? "From your text to the entities, in ten stages." : g.short;
+  $("#plede").textContent = S.view === "map" ? "Where the model places each piece, layer by layer." : S.overview ? "From your text and schema to the answers, in ten stages." : g.short;
   document.querySelectorAll("[role=tab]").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === S.tab));
   $("#tabbody").innerHTML = CONTENT[key][S.tab](st);
 }
@@ -1179,20 +1260,60 @@ $("#follow").addEventListener("click", (e) => { const b = e.target.closest("[dat
 
 // ---------- data ----------
 function prep(d) {
+  const sch = d.input.schema;
+  d.choices = d.classifications.flatMap((c, ti) => c.labels.map((label, j) => ({ task: c.task, label, ti, j })));
+  d.queries.forEach((q) => {
+    const g = q.type === "entities" ? Object.keys(sch.attributes).find((a) => q.role.startsWith(a + ": ")) : null;
+    q.kind = q.type === "json_structures" ? "structure" : q.type === "relations" ? "relation" : g ? "attribute" : "entity";
+    q.group = q.kind === "entity" ? "entities" : g ?? q.task;
+    q.short = g ? q.role.slice(g.length + 2) : q.role;
+    q.anchor = q.kind === "structure" && sch.structures[q.task]?.anchor === q.role;
+  });
+  // span queries grouped by the task that owns them, then one group per classification task
+  d.groups = [];
+  d.queries.forEach((q, i) => { const g = d.groups.at(-1); if (g && g.name === q.group && g.kind === q.kind) g.q.push(i); else d.groups.push({ name: q.group, kind: q.kind, q: [i], c: [] }); });
+  d.classifications.forEach((c, ti) => d.groups.push({ name: c.task, kind: "classification", q: [], c: d.choices.flatMap((x, ci) => (x.ti === ti ? [ci] : [])) }));
+  // what each schema piece names: a span query, a classification choice or a description
   let cur = null;
   d.tokens.forEach((t) => {
-    if (t.kind === "marker") { cur = t.label; t.lab = t.label; }
-    else if (t.kind === "schema") { if (t.piece.includes(")")) cur = null; t.lab = cur != null && /[\p{L}\p{N}]/u.test(t.piece) ? cur : null; }
-    else t.lab = null;
+    t.ci = t.cls ? d.choices.findIndex((c) => c.ti === t.cls[0] && c.j === t.cls[1]) : null;
+    if (t.kind === "marker") { cur = t.label != null ? { lab: t.label } : t.ci != null ? { ci: t.ci } : t.piece === "[DESCRIPTION]" ? { desc: true } : null; t.lab = t.label; }
+    else if (t.kind === "schema") {
+      if (t.piece.includes("(") || t.piece.includes(")")) cur = null;
+      const named = cur && /[\p{L}\p{N}]/u.test(t.piece);
+      t.lab = named ? cur.lab ?? null : null; t.ci = named ? cur.ci ?? null : null; t.desc = !!(named && cur.desc);
+    } else t.lab = null;
   });
   d.W = d.words.length; d.Q = d.input.labels.length; d.T = d.tokens.length;
   d.candidates.forEach((c) => (c.final = d.entities.filter((e) => e.start === c.cs && e.end === c.ce).map((e) => e.label)));
   const up = /[A-ZÁÉÍÓÚÑÜ]/;
   d.lower = up.test(d.input.text) && !d.tokens.some((t) => t.kind === "text" && up.test(t.piece));
 }
+// Plain form syntax -> /api/analyze schema. Commas separate items, ";" separates groups, ":" names a group.
+function parseSchema() {
+  const list = (s) => s.split(",").map((x) => x.trim()).filter(Boolean);
+  const groups = (sel, what) => $(sel).value.split(";").map((x) => x.trim()).filter(Boolean).map((g) => {
+    const i = g.indexOf(":");
+    if (i < 1) throw new Error(`Write ${what} as “name: a, b, c”.`);
+    return [g.slice(0, i).trim(), g.slice(i + 1).trim()];
+  });
+  const entities = Object.fromEntries(list($("#fEnt").value).map((e) => { const [n, d] = e.split("="); return [n.trim(), d?.trim() || null]; }));
+  const attributes = Object.fromEntries(groups("#fAttr", "attributes").map(([g, rest]) => { const [labels, to] = rest.split(/→|->/); return [g, { labels: list(labels), applies_to: to ? list(to) : null }]; }));
+  const classifications = Object.fromEntries(groups("#fCls", "classifications").map(([t, rest]) => [t, list(rest)]));
+  const structures = Object.fromEntries(groups("#fStr", "structures").map(([n, rest]) => {
+    const fields = list(rest), anchor = fields.find((f) => f.endsWith("*"));
+    return [n, { fields: fields.map((f) => f.replace(/\*$/, "").trim()), anchor: anchor ? anchor.replace(/\*$/, "").trim() : null }];
+  }));
+  return { entities, attributes, classifications, relations: list($("#fRel").value), structures };
+}
+const fill = (x) => { $("#text").value = x.text; Object.entries(FIELDS).forEach(([k, sel]) => ($(sel).value = x[k] ?? "")); };
 function toast(msg) { const t = $("#toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => (t.style.display = "none"), 5000); }
 async function analyze() {
-  const body = { text: $("#text").value, labels: $("#labels").value.split(",").map((s) => s.trim()).filter(Boolean), threshold: +$("#thr").value };
+  let schema;
+  try { schema = parseSchema(); } catch (e) { return toast(e.message); }
+  if (!Object.keys(schema.entities).length && !schema.relations.length && !Object.keys(schema.structures).length)
+    return toast("Add at least one entity type, relation or structure: the walkthrough follows the span path.");
+  const body = { text: $("#text").value, threshold: +$("#thr").value, ...schema };
   $("#go").disabled = true; $("#busy").classList.add("on"); stopPlay();
   try {
     const r = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -1217,7 +1338,7 @@ $("#thr").addEventListener("input", (e) => ($("#thrOut").textContent = f2(e.targ
 EXAMPLES.forEach((x) => {
   const b = document.createElement("button");
   b.type = "button"; b.textContent = x.name;
-  b.onclick = () => { $("#text").value = x.text; $("#labels").value = x.labels; analyze(); };
+  b.onclick = () => { fill(x); analyze(); };
   $("#status").before(b);
 });
 $("#prev").onclick = () => { stopPlay(); S.overview ? selectStep(0) : selectStep(S.step - 1); };
@@ -1257,7 +1378,7 @@ addEventListener("keydown", (e) => {
   buildSteps(INFO.layers);
   $("#mapLayer").max = INFO.layers;
   renderRail();
-  $("#text").value = EXAMPLES[0].text; $("#labels").value = EXAMPLES[0].labels;
+  fill(EXAMPLES[0]);
   analyze();
 })();
 </script>

@@ -1,7 +1,7 @@
 # Inside GLiNER2.5
 
 An interactive, didactic 3D view of GLiNER2.5 for non-technical readers.
-You type a sentence and the labels you are looking for. The real model runs, and the page draws what each stage produces, from the pieces of the text to the final entities.
+You type a sentence and a schema: entity types, attributes, relations, a structure and classification labels. The real model answers all of it in one pass, and the page draws what each stage produces, from the pieces of the text to the final answers.
 
 ## Start
 
@@ -21,9 +21,19 @@ The first run downloads the model from Hugging Face (~1.1 GB).
 
 ## What you see
 
-Ten stages stacked in a tower, from bottom to top: text and labels, tokenizer, embeddings, 12 Transformer layers, word and label vectors, gaps between words, "starts? ends?", candidates, scoring and decision.
+Ten stages stacked in a tower, from bottom to top: text and schema, tokenizer, embeddings, 12 Transformer layers, word and query vectors, gaps between words, "starts? ends?", candidates, scoring and decision.
 Each stage has three tabs: "What it does" (plain language), "With your sentence" (the real values) and "Under the hood" (shapes, parameters and the source file).
 The "Meaning map" view shows how each piece moves through the model's space, layer by layer.
+
+## Schema syntax
+
+| Field | Example | Meaning |
+|---|---|---|
+| Entities | `person = named people, company` | Entity types; an optional description follows `=`. |
+| Attributes | `mood: happy, annoyed → person` | A label group scored at each entity it applies to. Separate groups with `;`. |
+| Classification | `topic: tech, sports; tone: good, bad` | Labels for the whole text. Separate tasks with `;`. |
+| Relations | `works_for, located_in` | Relation types; each one has a head and a tail role. |
+| Structure | `launch: product*, company, place` | Record fields; `*` marks the anchor (default: the first field). |
 
 ## Files
 
@@ -53,8 +63,8 @@ Limits: 60 words; 12 span queries in total (entity types + attribute labels + 2 
 
 - Attention is shown as the average of the 12 heads.
 - The map is a 3D PCA projection, so distances are approximate. The similarity figures use the real 768 numbers.
-- Only entity extraction is walked through. The model also classifies text and extracts relations, records and span attributes.
-- Limits: 60 words and 8 labels per sentence, so the drawing stays readable.
+- The tower follows the span path that entity types, attribute labels, relation roles and structure fields share. The classification, attribute, relation and record heads are summed up in the panel; they are not drawn as plates yet.
+- Limits: 60 words, 12 span queries and 3 classification tasks per sentence, so the drawing stays readable.
 
 ## Credits
 
