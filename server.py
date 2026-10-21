@@ -14,16 +14,18 @@
 # ///
 """Run GLiNER2.5 on one sentence and return what every stage of the model produced.
 
-    uv run server.py [--model fastino/gliner2.5-multi-v1] [--port 8765]
+    uv run server.py [--model fastino/gliner2.5-multi-v1] [--host 127.0.0.1] [--port 8765]
 
 Then open http://localhost:8765. The page (index.html) draws the result in 3D.
 """
 
 import argparse
+import gzip
 import json
 import math
+import threading
 import time
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import torch
@@ -32,7 +34,9 @@ from gliner2 import AttributeGroup, AutoExtractor
 HERE = Path(__file__).parent
 MAX_WORDS, MAX_QUERIES, MAX_CLS, MAX_CHOICES, STRIP = 60, 12, 3, 8, 32
 TOP = 8  # ponytail: record instances and field candidates sent per field; raise it if a schema needs more
-CAP: dict = {}  # ponytail: global capture dict, safe because HTTPServer serves one request at a time
+MAX_BODY = 20000
+CAP: dict = {}  # ponytail: global capture dict; LOCK runs one analysis at a time. Per-request captures if throughput matters
+LOCK = threading.Lock()
 
 
 def r(x, nd=3):
@@ -444,13 +448,20 @@ def validate(body):
 
 
 class Handler(SimpleHTTPRequestHandler):
+    timeout = 30  # a client that stops sending only holds its own thread, and only for this long
+
     def __init__(self, *a, **k):
         super().__init__(*a, directory=str(HERE), **k)
 
     def send_json(self, code, obj):
         data = json.dumps(obj, ensure_ascii=False).encode()
+        zipped = "gzip" in self.headers.get("Accept-Encoding", "")
+        if zipped:  # an analysis is mostly attention numbers: ~2 MB of JSON shrinks several times
+            data = gzip.compress(data, 5)
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        if zipped:
+            self.send_header("Content-Encoding", "gzip")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
@@ -466,8 +477,13 @@ class Handler(SimpleHTTPRequestHandler):
         if self.path != "/api/analyze":
             return self.send_error(404)
         try:
-            body = json.loads(self.rfile.read(min(int(self.headers.get("Content-Length", 0)), 20000)))
-            self.send_json(200, analyze(MODEL, *validate(body)))
+            n = int(self.headers.get("Content-Length", 0))
+            if not 0 < n <= MAX_BODY:
+                raise ValueError(f"Send a JSON body of 1 to {MAX_BODY} bytes.")
+            args = validate(json.loads(self.rfile.read(n)))
+            with LOCK:  # the model and CAP are shared, so analyses run one at a time
+                out = analyze(MODEL, *args)
+            self.send_json(200, out)
         except (ValueError, TypeError, KeyError, AttributeError, json.JSONDecodeError) as e:
             self.send_json(400, {"error": str(e)})
         except Exception as e:  # keep the page alive and show the error
@@ -508,6 +524,7 @@ def check():
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="fastino/gliner2.5-multi-v1")
+    ap.add_argument("--host", default="127.0.0.1", help="0.0.0.0 to accept outside connections (Docker, Spaces)")
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--check", action="store_true", help="run two sentences, verify the output and exit")
     args = ap.parse_args()
@@ -515,6 +532,7 @@ if __name__ == "__main__":
     MODEL = load(args.model)
     INFO = model_info(MODEL, args.model)
     if args.check:
-        raise SystemExit(check())
+        print(check())  # print, not SystemExit(msg): a message would exit with status 1 and fail a Docker build
+        raise SystemExit(0)
     print(f"Ready: http://localhost:{args.port}")
-    HTTPServer(("127.0.0.1", args.port), Handler).serve_forever()
+    ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()

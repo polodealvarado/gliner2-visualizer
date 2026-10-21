@@ -1,3 +1,24 @@
+---
+title: Inside GLiNER2.5
+emoji: 🔎
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+license: apache-2.0
+short_description: Watch GLiNER2.5 extract information, stage by stage
+models:
+  - fastino/gliner2.5-multi-v1
+tags:
+  - gliner2
+  - information-extraction
+  - named-entity-recognition
+  - relation-extraction
+  - text-classification
+  - visualization
+---
+
 # Inside GLiNER2.5
 
 An interactive, didactic 3D view of GLiNER2.5 for non-technical readers.
@@ -30,6 +51,7 @@ The first run downloads the model from Hugging Face (~1.1 GB).
 | Option | Use |
 |---|---|
 | `--model <repo>` | Another GLiNER2.5 *boundary* checkpoint, e.g. `fastino/gliner2.5-base-v1`. |
+| `--host <addr>` | Address to listen on (default 127.0.0.1; `0.0.0.0` in Docker). |
 | `--port <n>` | Port (default 8765). |
 | `--check` | Runs one sentence, verifies the output and exits. |
 
@@ -54,6 +76,15 @@ The "Meaning map" view shows how each piece moves through the model's space, lay
 | Classification | `topic: tech, sports; tone: good, bad` | Labels for the whole text. Separate tasks with `;`. |
 | Relations | `works_for, located_in` | Relation types; each one has a head and a tail role. |
 | Structure | `launch: product*, company, place` | Record fields; `*` marks the anchor (default: the first field). |
+
+## Docker
+
+```bash
+docker build -t inside-gliner .        # downloads the model and runs --check
+docker run -p 7860:7860 inside-gliner   # then open http://localhost:7860
+```
+
+The same `Dockerfile` runs the Hugging Face Space.
 
 ## Files
 
