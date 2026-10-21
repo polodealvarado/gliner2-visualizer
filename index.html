@@ -10,8 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #F3EEE5; --paper: #FBF8F2; --wash: #F7F1E7; --line: #E3D9C8; --ink: #2B2926; --muted: #6E685F; --faint: #A39C90;
-  --terra: #B85C3C; --terra-dark: #9C4A2E; --slate: #4D6170; --sand: #D4B48C; --olive: #7C8A5A;
+  --bg: #EEF3F8; --paper: #F8FAFD; --wash: #F1F5FA; --line: #D8E2EE; --ink: #1F2D3D; --muted: #5E6E82; --faint: #9AA8B8;
+  --terra: #3D6FB0; --terra-dark: #30598F; --slate: #4A9AA6; --sand: #B9C9DC; --olive: #86A86E;
   --serif: "Playfair Display", Georgia, serif; --sans: "Inter", system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 * { box-sizing: border-box; }
@@ -66,7 +66,7 @@ main { display: grid; grid-template-columns: 236px 1fr 430px; min-height: 0; }
 #scene { display: block; width: 100%; height: 100%; }
 .hud { position: absolute; display: flex; gap: 8px; align-items: center; }
 .hud.tl { top: 14px; left: 14px; } .hud.tr { top: 14px; right: 14px; }
-.hud.bc { bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 6px 8px; box-shadow: 0 6px 22px rgba(70, 50, 30, .08); }
+.hud.bc { bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 6px 8px; box-shadow: 0 6px 22px rgba(30, 50, 80, .08); }
 .seg { display: inline-flex; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
 .seg button { border: 0; background: none; border-radius: 7px; padding: 5px 11px; font-size: 13px; color: var(--muted); white-space: nowrap; }
 .seg button.on { background: var(--ink); color: var(--paper); }
@@ -83,11 +83,11 @@ main { display: grid; grid-template-columns: 236px 1fr 430px; min-height: 0; }
 #mapCtl input[type=range] { width: 220px; accent-color: var(--terra); }
 #mapCtl output { font: 500 13px var(--mono); color: var(--ink); width: 86px; }
 #mapCtl label { display: inline-flex; gap: 5px; align-items: center; }
-#busy { position: absolute; inset: 0; display: none; place-items: center; background: rgba(243, 238, 229, .72); font: 500 italic 20px var(--serif); color: var(--muted); }
+#busy { position: absolute; inset: 0; display: none; place-items: center; background: rgba(238, 243, 248, .76); font: 500 italic 20px var(--serif); color: var(--muted); }
 #busy.on { display: grid; }
-#hint { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); font-size: 13px; color: var(--muted); background: rgba(251, 248, 242, .9); padding: 5px 12px; border-radius: 8px; pointer-events: none; transition: opacity .4s; }
+#hint { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); font-size: 13px; color: var(--muted); background: rgba(248, 250, 253, .92); padding: 5px 12px; border-radius: 8px; pointer-events: none; transition: opacity .4s; }
 
-#tip { position: fixed; z-index: 10; pointer-events: none; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; max-width: 290px; font-size: 13px; line-height: 1.45; box-shadow: 0 8px 24px rgba(70, 50, 30, .12); opacity: 0; transition: opacity .12s; }
+#tip { position: fixed; z-index: 10; pointer-events: none; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; max-width: 290px; font-size: 13px; line-height: 1.45; box-shadow: 0 8px 24px rgba(30, 50, 80, .12); opacity: 0; transition: opacity .12s; }
 #tip b { display: block; font-weight: 600; }
 #tip span { color: var(--muted); display: block; }
 #tip code { font: 12px var(--mono); }
@@ -115,9 +115,9 @@ code { background: var(--wash); padding: 1px 5px; border-radius: 5px; }
 button.lab:hover { border-color: var(--c); }
 button.lab.on { background: var(--c); color: var(--paper); border-color: var(--c); }
 button.lab.on::before { background: var(--paper); }
-.pc { display: inline-block; font: 12.5px/1.6 var(--mono); background: #EFE7DA; border-radius: 6px; padding: 0 6px; margin: 2px 1px; white-space: pre; }
+.pc { display: inline-block; font: 12.5px/1.6 var(--mono); background: #E4ECF5; border-radius: 6px; padding: 0 6px; margin: 2px 1px; white-space: pre; }
 .pc.marker { background: var(--slate); color: var(--paper); }
-.pc.schema { background: #E4E7E8; }
+.pc.schema { background: #DDE5EE; }
 .pc .id { color: var(--faint); font-size: 10.5px; margin-left: 4px; }
 .pc.marker .id { color: #C9D2D8; }
 .seq { font: 13px/2 var(--mono); background: var(--wash); border-radius: 10px; padding: 10px 12px; word-break: break-word; }
@@ -164,7 +164,7 @@ dl.legend dd { margin: 0; color: var(--muted); }
 .follow .fg small { font: 500 11px var(--mono); color: var(--faint); }
 .seq .segl { display: block; }
 .seq small { font: 500 10.5px var(--sans); color: var(--faint); text-transform: uppercase; letter-spacing: .05em; margin-right: 6px; }
-.pc.desc { background: #F1E6D3; color: var(--muted); }
+.pc.desc { background: #EAF0F6; color: var(--muted); }
 
 /* footer: credits */
 .foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; padding: 8px 24px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
@@ -285,14 +285,14 @@ const f2 = (v) => Number(v).toFixed(2);
 const nf = (n) => Number(n).toLocaleString("en-US");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const argmax = (a) => a.reduce((b, v, i) => (v > a[b] ? i : b), 0);
-const C = { bg: "#F3EEE5", paper: "#FBF8F2", wash: "#F7F1E7", plate: "#E8DFCE", ink: "#2B2926", muted: "#6E685F", word: "#CBA275", word2: "#DEC6A4",
-  terra: "#B85C3C", slate: "#4D6170", sand: "#D4B48C", olive: "#7C8A5A", schema: "#C3C9CD", cls: "#6A5A99" };
-const LABEL_COLORS = ["#B85C3C", "#4D6170", "#7C8A5A", "#C0913A", "#8A5A6E", "#4F7F78", "#8C6A4F", "#3E7CA6", "#A84E62", "#6B8F3A", "#9C7A2E", "#5C6E8F"];
+const C = { bg: "#EEF3F8", paper: "#F8FAFD", wash: "#F1F5FA", plate: "#E2EAF3", ink: "#1F2D3D", muted: "#5E6E82", word: "#AFC3D9", word2: "#CBD8E6",
+  terra: "#3D6FB0", slate: "#4A9AA6", sand: "#9FB4CC", olive: "#86A86E", schema: "#D5DEE8", cls: "#5B57A8", neg: "#C9A06A" };
+const LABEL_COLORS = ["#3D6FB0", "#4A9AA6", "#86A86E", "#C99A55", "#C27C7C", "#9B84C2", "#5E96CF", "#6FA595", "#B0896A", "#8495AD", "#B07FA0", "#A3A35C"];
 const LC = (q) => LABEL_COLORS[q % LABEL_COLORS.length];
 const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const mix = (a, b, t) => { const A = rgb(a), B = rgb(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * clamp(t, 0, 1))).join(",")})`; };
 const ramp = (v, to = C.terra) => mix(C.paper, to, v);
-const diverge = (v) => (v >= 0 ? mix(C.paper, C.terra, v) : mix(C.paper, C.slate, -v));
+const diverge = (v) => (v >= 0 ? mix(C.paper, C.terra, v) : mix(C.paper, C.neg, -v));
 
 // ---------- state ----------
 const S = { task: "entities", step: 0, overview: true, label: 0, focusTok: 0, view: "flow", tab: "what", playing: false, mapLayer: 0, mapPlaying: false };
@@ -419,8 +419,8 @@ const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 500);
 camera.position.set(20, 20, 40);
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.autoRotateSpeed = 0.5;
-scene.add(new THREE.HemisphereLight("#FFF8EE", "#CDBEA6", 1.6));
-const sun = new THREE.DirectionalLight("#FFF0DC", 1.9);
+scene.add(new THREE.HemisphereLight("#F7FAFF", "#C9D5E3", 1.6));
+const sun = new THREE.DirectionalLight("#FFFFFF", 1.8);
 sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004; sun.shadow.radius = 3;
 scene.add(sun, sun.target);
 const shadowCatcher = new THREE.Mesh(new THREE.CircleGeometry(40, 48), new THREE.ShadowMaterial({ opacity: 0.07 }));
@@ -481,7 +481,7 @@ const tokColor = (t) => {
   if (t.ci != null) return t.kind === "marker" ? C.cls : mix(C.cls, "#FFFFFF", 0.55);
   if (t.kind === "marker") return t.label != null ? LC(t.label) : C.slate;
   if (t.lab != null) return mix(LC(t.lab), "#FFFFFF", 0.5);
-  if (t.desc) return "#E9DDC8";
+  if (t.desc) return "#E6ECF3";
   return C.schema;
 };
 function row(items, widthOf, gap) {
@@ -1319,7 +1319,7 @@ const CONTENT = {
       const mk = D.tokens.flatMap((t, k) => (t.kind === "marker" && (t.label != null || t.ci != null) ? [k] : []));
       const same = [...new Set(mk.map((k) => D.tokens[k].piece))].filter((m) => { const ks = mk.filter((k) => D.tokens[k].piece === m); return ks.length > 1 && ks.every((k) => L0.strip[k].join() === L0.strip[ks[0]].join()); });
       const show = [...new Set([f, ...D.qmarkers, ...D.words.map((w) => w.token)])].slice(0, 14);
-      return `<p>Embedding of ${pc(t)} (the first 32 of ${INFO.hidden} numbers; terracotta = positive, slate = negative):</p>${strip(L0.strip[f])}
+      return `<p>Embedding of ${pc(t)} (the first 32 of ${INFO.hidden} numbers; blue = positive, sand = negative):</p>${strip(L0.strip[f])}
         ${same.length ? `<div class="note key">All ${same.map((m) => `<code>${m}</code>`).join(" and all ")} markers start with <b>exactly the same embedding</b>: they do not know yet which query they belong to. They find out by looking around in the next layers.</div>` : ""}
         <h3>More embeddings</h3><div class="strips">${show.map((k) => `<span>${pc(D.tokens[k])}${D.tokens[k].label != null ? " " + labChip(D.tokens[k].label) : ""}</span>${strip(L0.strip[k])}`).join("")}</div>
         <p style="margin-top:10px;color:var(--muted);font-size:13px">Click any piece in the 3D view to see its embedding.</p>`;
@@ -1330,7 +1330,7 @@ const CONTENT = {
   },
   layer: {
     what: (st) => `<p>Each layer does two things:</p>
-      <ol><li><b>Attention.</b> Each piece asks the others “who helps me understand myself?” and mixes in their information according to the answer. The terracotta lines in the 3D view show what the selected piece looks at.</li>
+      <ol><li><b>Attention.</b> Each piece asks the others “who helps me understand myself?” and mixes in their information according to the answer. The blue lines in the 3D view show what the selected piece looks at.</li>
       <li><b>Processing</b> (<i>feed-forward</i> network). Each piece works on its own with what it has gathered.</li></ol>
       <p>This repeats ${INFO.layers} times. Early layers capture form and neighbours; later layers capture meaning and role in the sentence.</p>
       <div class="note key">The schema travels together with the text. That is why the marker of ${labChip(S.label)} can look straight at the words of your sentence, and its focus gets sharper layer by layer.</div>
@@ -1393,7 +1393,7 @@ const CONTENT = {
   marks: {
     what: () => `<p>Now the question comes in. The query vector is compared with every gap and every word. Out come three scores from 0 to 1:</p>
       <ul><li><b style="color:var(--terra)">Starts</b>: does an entity of this type start here?</li><li><b style="color:var(--slate)">Ends</b>: does it end here?</li><li><b style="color:var(--olive)">Inside</b>: is this word part of one?</li></ul>
-      <p>In the 3D view: terracotta bars = starts, slate bars = ends, word height = inside. Switch the query above to see how they change.</p>`,
+      <p>In the 3D view: blue bars = starts, teal bars = ends, word height = inside. Switch the query above to see how they change.</p>`,
     mine: () => {
       const q = sq(), B = D.boundary, s = argmax(B.start[q]), e = argmax(B.end[q]);
       const cell = (v, c) => `<td style="background:${ramp(v, c)}">${v >= 0.5 ? f2(v) : ""}</td>`;
