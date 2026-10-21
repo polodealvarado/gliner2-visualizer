@@ -232,7 +232,6 @@ dl.legend dd { margin: 0; color: var(--muted); }
     </div>
     <div class="hud tr">
       <button class="ghost" id="overview" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4"/></svg>Full view</button>
-      <button class="ghost" id="sound" type="button" aria-pressed="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6h3l4-3v10l-4-3H2z"/><path id="waves" d="M11.5 5.5a3.5 3.5 0 0 1 0 5" opacity=".25"/></svg><span>Sound: off</span></button>
     </div>
     <div class="hud bc">
       <div id="flowCtl" style="display:flex;align-items:center;gap:2px">
@@ -267,6 +266,7 @@ dl.legend dd { margin: 0; color: var(--muted); }
   <span>Built on <a href="https://github.com/fastino-ai/GLiNER2" target="_blank" rel="noopener">GLiNER2</a> by <a href="https://fastino.ai" target="_blank" rel="noopener">Fastino AI</a></span>
   <a id="modelLink" href="https://huggingface.co/fastino/gliner2.5-multi-v1" target="_blank" rel="noopener">Model card</a>
   <a href="https://arxiv.org/abs/2507.18546" target="_blank" rel="noopener">Paper · arXiv 2507.18546</a>
+  <span>Made by <a href="https://huggingface.co/polodealvarado" target="_blank" rel="noopener">@polodealvarado</a></span>
   <span class="aside">Independent project, not affiliated with Fastino.</span>
 </footer>
 <div id="tip"></div>
@@ -295,7 +295,7 @@ const ramp = (v, to = C.terra) => mix(C.paper, to, v);
 const diverge = (v) => (v >= 0 ? mix(C.paper, C.terra, v) : mix(C.paper, C.slate, -v));
 
 // ---------- state ----------
-const S = { task: "entities", step: 0, overview: true, label: 0, focusTok: 0, view: "flow", tab: "what", playing: false, sound: false, mapLayer: 0, mapPlaying: false };
+const S = { task: "entities", step: 0, overview: true, label: 0, focusTok: 0, view: "flow", tab: "what", playing: false, mapLayer: 0, mapPlaying: false };
 let INFO = null, D = null, STEPS = [], plates = [];
 
 const EXAMPLES = {
@@ -405,18 +405,6 @@ function buildSteps(n) {
   });
 }
 const stepTitle = (st) => (st.key === "layer" ? `Layer ${st.layer} of ${INFO.layers}` : GROUPS[st.g].title);
-
-// ---------- sound (muted by default) ----------
-let AC = null;
-function blip(freq = 520, dur = 0.08, gain = 0.02, type = "sine", delay = 0) {
-  if (!S.sound) return;
-  AC ??= new AudioContext();
-  const t = AC.currentTime + delay, o = AC.createOscillator(), v = AC.createGain();
-  o.type = type; o.frequency.value = freq;
-  v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(gain, t + 0.006); v.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  o.connect(v).connect(AC.destination); o.start(t); o.stop(t + dur + 0.02);
-}
-const chime = () => { blip(392, 0.22, 0.03, "triangle"); blip(588, 0.28, 0.022, "triangle", 0.07); };
 
 // ---------- three.js scene ----------
 const canvas = $("#scene");
@@ -931,7 +919,6 @@ function runFlow(pairs) {
   pairs.slice(0, PMAX).forEach(([, , c], i) => parts.setColorAt(i, new THREE.Color(c)));
   if (parts.instanceColor) parts.instanceColor.needsUpdate = true;
   parts.count = flows.length; flowT0 = performance.now();
-  if (flows.length) blip(660, 0.12, 0.012, "sine", 0.5);
 }
 const _m = new THREE.Matrix4(), _v = new THREE.Vector3(), _q = new THREE.Quaternion(), _s = new THREE.Vector3();
 function stepFlows(now) {
@@ -1016,7 +1003,7 @@ function selectStep(i, { flow = false } = {}) {
   plates.forEach(attnArcs);
   focusPlate(plates[i]);
   if (flow && prev != null && prev === i - 1) runFlow(flowPairs(plates[prev], plates[i]));
-  chime(); renderRail(); renderPanel(); renderStepper();
+  renderRail(); renderPanel(); renderStepper();
   $("#hint").style.opacity = 0;
 }
 function overview() {
@@ -1036,7 +1023,7 @@ async function play() {
   stopPlay();
 }
 function follow(q) { S.label = q; S.focusTok = D.qmarkers[q]; updateHeights(); }
-function setLabel(q) { follow(q); renderPanel(); if (!S.overview && S.view === "flow") focusPlate(plates[S.step]); if (S.view === "map") mapRefresh(); blip(520, 0.08, 0.02); }
+function setLabel(q) { follow(q); renderPanel(); if (!S.overview && S.view === "flow") focusPlate(plates[S.step]); if (S.view === "map") mapRefresh(); }
 
 // ---------- map of meanings (PCA of each layer) ----------
 let mapPts = [], mapTrails = [], nearLine = null;
@@ -1083,7 +1070,7 @@ async function mapPlay() {
   if (S.mapPlaying) { S.mapPlaying = false; return; }
   S.mapPlaying = true;
   for (let l = S.mapLayer === INFO.layers ? 0 : S.mapLayer; l <= INFO.layers && S.mapPlaying && S.view === "map"; l++) {
-    S.mapLayer = l; mapRefresh(); blip(440 + l * 18, 0.07, 0.014); await sleep(1100);
+    S.mapLayer = l; mapRefresh(); await sleep(1100);
   }
   S.mapPlaying = false;
 }
@@ -1101,7 +1088,7 @@ function setView(v) {
 
 // ---------- pointer: hover tooltip and click ----------
 const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
-let hovered = null, downAt = null;
+let downAt = null;
 function pick(e) {
   const r = canvas.getBoundingClientRect();
   ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
@@ -1147,14 +1134,13 @@ function tipHTML(o) {
 canvas.addEventListener("pointermove", (e) => {
   if (!D) return;
   const o = pick(e), tip = $("#tip");
-  if (o !== hovered) { hovered = o; if (o && o.userData.kind === "tile") blip(700, 0.04, 0.008); }
   canvas.style.cursor = o ? "pointer" : "grab";
   if (!o) { tip.style.opacity = 0; return; }
   tip.innerHTML = tipHTML(o);
   const x = Math.min(e.clientX + 16, innerWidth - 300), y = Math.min(e.clientY + 16, innerHeight - tip.offsetHeight - 10);
   tip.style.left = x + "px"; tip.style.top = y + "px"; tip.style.opacity = 1;
 });
-canvas.addEventListener("pointerleave", () => { $("#tip").style.opacity = 0; hovered = null; });
+canvas.addEventListener("pointerleave", () => { $("#tip").style.opacity = 0; });
 canvas.addEventListener("pointerdown", (e) => { downAt = [e.clientX, e.clientY]; stopPlay(); });
 canvas.addEventListener("pointerup", (e) => {
   if (!D || !downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 5) return;
@@ -1166,7 +1152,7 @@ canvas.addEventListener("pointerup", (e) => {
   if (i?.type === "choice" || i?.type === "clsv") return setLabel(D.Q + i.ci);
   if (u.map) return renderPanel();
   const idx = u.kind === "plate" ? u.idx : u.p.idx;
-  if (idx !== S.step || S.overview) selectStep(idx); else { renderPanel(); blip(520, 0.06, 0.016); }
+  if (idx !== S.step || S.overview) selectStep(idx); else renderPanel();
 });
 
 // ---------- render loop ----------
@@ -1596,7 +1582,7 @@ function renderPanel() {
   document.querySelectorAll("[role=tab]").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === S.tab));
   $("#tabbody").innerHTML = CONTENT[key][S.tab](st);
 }
-$("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (!b) return; S.tab = b.dataset.tab; renderPanel(); blip(600, 0.05, 0.012); });
+$("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (!b) return; S.tab = b.dataset.tab; renderPanel(); });
 $("#follow").addEventListener("click", (e) => { const b = e.target.closest("[data-q]"); if (b) setLabel(+b.dataset.q); });
 
 // ---------- data ----------
@@ -1695,7 +1681,7 @@ $("#taskbar").addEventListener("click", (e) => {
   const b = e.target.closest("[data-task]");
   if (!b || b.dataset.task === S.task) return;
   S.task = b.dataset.task; S.overview = true; S.step = 0;
-  renderTasks(); fill(EXAMPLES[S.task][0]); analyze(); blip(600, 0.05, 0.012);
+  renderTasks(); fill(EXAMPLES[S.task][0]); analyze();
 });
 $("#prev").onclick = () => { stopPlay(); S.overview ? selectStep(0) : selectStep(S.step - 1); };
 $("#next").onclick = () => { stopPlay(); S.overview ? selectStep(0) : selectStep(S.step + 1, { flow: true }); };
@@ -1706,13 +1692,6 @@ $("#vMap").onclick = () => setView("map");
 $("#mapLayer").oninput = (e) => { S.mapLayer = +e.target.value; S.mapPlaying = false; mapRefresh(); };
 $("#mapPlay").onclick = mapPlay;
 $("#trails").onchange = mapRefresh;
-$("#sound").onclick = () => {
-  S.sound = !S.sound;
-  $("#sound").setAttribute("aria-pressed", S.sound);
-  $("#sound span").textContent = `Sound: ${S.sound ? "on" : "off"}`;
-  $("#waves").setAttribute("opacity", S.sound ? 1 : 0.25);
-  chime();
-};
 addEventListener("keydown", (e) => {
   if (!D || e.target.closest("input, textarea")) return;
   if (e.key === "ArrowRight") { e.preventDefault(); $("#next").click(); }

@@ -72,4 +72,4 @@ Limits: 60 words; 12 span queries in total (entity types + attribute labels + 2 
 ## Credits
 
 GLiNER2 and the GLiNER2.5 checkpoints are by [Fastino AI](https://github.com/fastino-ai/GLiNER2) (Apache-2.0; paper: [arXiv:2507.18546](https://arxiv.org/abs/2507.18546)).
-This visualization is an independent project and is not affiliated with Fastino.
+This visualization is made by [@polodealvarado](https://huggingface.co/polodealvarado). It is an independent project and is not affiliated with Fastino.
