@@ -24,7 +24,7 @@ button { cursor: pointer; }
 
 /* top bar: brand, task tabs, status */
 .appbar { display: flex; align-items: center; gap: 24px; padding: 12px 24px; border-bottom: 1px solid var(--line); }
-.brand { margin: 0; font: 600 25px/1.1 var(--serif); letter-spacing: -0.01em; white-space: nowrap; }
+.brand { margin: 0; padding: 0; border: 0; background: none; color: inherit; font: 600 25px/1.1 var(--serif); letter-spacing: -0.01em; white-space: nowrap; }
 /* composer: one row (sentence, task fields, threshold, Analyze); with more than two fields they get a row of their own */
 .composer { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 16px; padding: 14px 24px 12px; background: var(--paper); border-bottom: 1px solid var(--line); }
 .composer > .field:first-child { flex: 2 1 360px; }
@@ -99,6 +99,7 @@ main { display: grid; grid-template-columns: 236px 1fr 430px; min-height: 0; }
 .kicker { font: 500 12px var(--mono); color: var(--terra); letter-spacing: .02em; }
 #panel h2 { font: 600 27px/1.15 var(--serif); margin: 4px 0 6px; letter-spacing: -0.01em; }
 .lede { color: var(--muted); margin: 0 0 14px; }
+[role=tablist][hidden] { display: none; }
 [role=tablist] { display: flex; gap: 18px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
 [role=tab] { background: none; border: 0; border-bottom: 2px solid transparent; padding: 6px 0 8px; font-size: 14px; color: var(--muted); margin-bottom: -1px; }
 [role=tab][aria-selected=true] { color: var(--ink); border-bottom-color: var(--terra); font-weight: 600; }
@@ -168,20 +169,39 @@ dl.legend dd { margin: 0; color: var(--muted); }
 
 /* about: what GLiNER2.5 is and what it is for */
 .linkish { background: none; border: 0; padding: 0; color: var(--terra); text-decoration: underline; text-underline-offset: 3px; }
-#about { width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 48px); padding: 0; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); color: var(--ink); box-shadow: 0 24px 60px rgba(30, 50, 80, .18); }
-#about::backdrop { background: rgba(31, 45, 61, .3); }
-.about-in { position: relative; padding: 26px 30px 22px; }
-#about h2 { font: 600 26px/1.15 var(--serif); margin: 0 0 8px; padding-right: 40px; }
-#about h3 { font: 600 16px var(--serif); margin: 18px 0 6px; }
-#about .lede { margin: 0 0 4px; }
-#about ul { margin: 0; padding-left: 18px; font-size: 14px; }
-#about li { margin-bottom: 5px; }
-#about li b { font-weight: 600; }
-#about form { position: absolute; top: 14px; right: 14px; margin: 0; }
-.about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; }
 .about-links { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 18px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
 .about-links a { color: var(--ink); text-decoration: underline dotted var(--faint); text-underline-offset: 3px; }
 .about-links a:hover { color: var(--terra); }
+
+/* landing: the live tower turns behind the text; the text sits on the left */
+body.landing #stage { position: fixed; inset: 0; height: auto; z-index: 40; } /* height: auto beats the 60vh of narrow screens */
+body.landing #stage > :not(canvas) { display: none; }
+body:not(.landing) #landing { display: none; }
+body.landing { overflow: hidden; }
+#landing { position: fixed; inset: 0; z-index: 41; display: grid; grid-template-rows: 1fr auto;
+  background: linear-gradient(90deg, rgba(238, 243, 248, .97) 0%, rgba(238, 243, 248, .92) 36%, rgba(238, 243, 248, .4) 60%, rgba(238, 243, 248, 0) 78%); }
+.land-in { align-self: center; max-width: 640px; padding: 40px 64px; }
+.land-kicker { margin: 0; font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--terra); }
+#landing h1 { margin: 12px 0 18px; font: 600 clamp(46px, 6.2vw, 88px)/1 var(--serif); letter-spacing: -0.02em; }
+#landing h1 span { color: var(--terra); }
+.land-lede { margin: 0 0 12px; font-size: 19px; line-height: 1.5; }
+.land-what { margin: 0; color: var(--muted); font-size: 15px; }
+.land-tasks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 26px 0 22px; }
+.land-tasks button { text-align: left; background: rgba(255, 255, 255, .72); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; }
+.land-tasks button:hover { border-color: var(--terra); background: #fff; }
+.land-tasks b { display: block; font-size: 14px; font-weight: 600; }
+.land-tasks span { display: block; font-size: 12px; line-height: 1.35; color: var(--muted); }
+.land-cta { display: flex; flex-wrap: wrap; gap: 10px; }
+.land-cta .primary, .land-cta .ghost { padding: 12px 24px; font-size: 15px; }
+.land-cta .ghost { color: var(--ink); }
+.land-meta { margin: 18px 0 0; font: 12px var(--mono); color: var(--faint); }
+.land-foot { margin: 0; padding: 14px 64px; font-size: 12.5px; color: var(--muted); }
+.land-foot a { color: var(--ink); text-decoration: underline dotted var(--faint); text-underline-offset: 3px; }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+.land-in > * { animation: rise .8s cubic-bezier(.2, .7, .2, 1) both; }
+.land-in > :nth-child(2) { animation-delay: .07s; } .land-in > :nth-child(3) { animation-delay: .14s; } .land-in > :nth-child(4) { animation-delay: .21s; }
+.land-in > :nth-child(5) { animation-delay: .28s; } .land-in > :nth-child(6) { animation-delay: .35s; } .land-in > :nth-child(7) { animation-delay: .42s; }
+@media (prefers-reduced-motion: reduce) { .land-in > * { animation: none; } }
 
 /* footer: credits */
 .foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; padding: 8px 24px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
@@ -202,13 +222,18 @@ dl.legend dd { margin: 0; color: var(--muted); }
   #panel { border-left: 0; border-top: 1px solid var(--line); padding: 18px 16px 40px; }
   #stepLabel { min-width: 0; }
 }
+@media (max-width: 760px) {
+  #landing { background: rgba(238, 243, 248, .95); overflow-y: auto; }
+  .land-in { align-self: start; padding: 32px 20px; }
+  .land-tasks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .land-foot { padding: 12px 20px; }
+}
 @media (max-width: 560px) {
   .appbar, .composer, .foot { padding-left: 16px; padding-right: 16px; }
   .composer > *, .tasks > .field { flex-basis: 100%; }
   .composer.wide .tasks { grid-template-columns: 1fr; order: 1; } /* on phones, fill the fields first, then Analyze */
   .foot .aside { margin-left: 0; }
-  .about-grid { grid-template-columns: 1fr; }
-  .about-in { padding: 22px 18px 18px; }
+
   #stepLabel, #mapCtl input[type=range] { display: none; }
   .hud.tr { top: 60px; left: 14px; right: auto; }
 }
@@ -220,12 +245,11 @@ dl.legend dd { margin: 0; color: var(--muted); }
 } }
 </script>
 </head>
-<body>
+<body class="landing">
 <header class="appbar">
-  <h1 class="brand">Inside GLiNER2.5</h1>
+  <button class="brand" id="brand" type="button" title="Back to the start page">Inside GLiNER2.5</button>
   <nav class="seg taskbar" id="taskbar" aria-label="Task"></nav>
   <span id="status"></span>
-  <button class="ghost" id="aboutBtn" type="button">What is GLiNER2.5?</button>
 </header>
 <form id="form" class="composer">
   <div class="field"><label for="text">Your sentence</label><input id="text" type="text" autocomplete="off" spellcheck="false"></div>
@@ -289,52 +313,21 @@ dl.legend dd { margin: 0; color: var(--muted); }
   <span>Made by <a href="https://huggingface.co/polodealvarado" target="_blank" rel="noopener">@polodealvarado</a></span>
   <span class="aside">Independent project, not affiliated with Fastino.</span>
 </footer>
-<dialog id="about" aria-labelledby="aboutTitle">
-  <div class="about-in">
-    <form method="dialog"><button class="icon" aria-label="Close"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></form>
-    <h2 id="aboutTitle">What is GLiNER2.5?</h2>
-    <p class="lede">GLiNER2.5 is a family of small, open models from Fastino AI that turn text into structured data. You describe what you want in a schema (entity types, labels, relations, fields) and the model answers all of it in one pass, even for types it never saw during training.</p>
-    <div class="about-grid">
-      <section>
-        <h3>What it can do</h3>
-        <ul>
-          <li><b>Entities</b>: find stretches of text of any type you name, such as people, companies, dates or medications.</li>
-          <li><b>Classification</b>: give the whole text one label or several, such as topic, intent or tone.</li>
-          <li><b>Relations</b>: link two stretches with a typed, directed relation, such as Tim Cook → works_for → Apple.</li>
-          <li><b>Structures</b>: fill records with fields and keep which value belongs to which record.</li>
-          <li><b>Attributes</b>: give each entity a label from a group, such as the mood of each person.</li>
-        </ul>
-      </section>
-      <section>
-        <h3>What people use it for</h3>
-        <ul>
-          <li>Pull names, dates and amounts out of contracts, invoices or medical records.</li>
-          <li>Find personal data in documents before they are shared.</li>
-          <li>Route support tickets by intent and tone.</li>
-          <li>Turn news into a graph of who works where.</li>
-          <li>Fill a database from emails or free-text forms.</li>
-          <li>Measure the opinion about each product or person, not only about the whole text.</li>
-        </ul>
-      </section>
+<section id="landing" aria-labelledby="landTitle">
+  <div class="land-in">
+    <p class="land-kicker">An interactive look inside a real model</p>
+    <h1 id="landTitle">Inside <span>GLiNER2.5</span></h1>
+    <p class="land-lede">Type a sentence, describe what you are looking for, and watch the model turn text into entities, labels, relations and records, stage by stage and layer by layer.</p>
+    <p class="land-what">GLiNER2.5 is a family of small, open models from Fastino AI that turn text into structured data: one schema, one pass, even for types the model never saw in training.</p>
+    <div class="land-tasks" id="landTasks"></div>
+    <div class="land-cta">
+      <button class="primary" id="landGo" type="button">Start exploring</button>
+      <button class="ghost" type="button" data-about>What is GLiNER2.5?</button>
     </div>
-    <h3>Why it stands out</h3>
-    <ul>
-      <li><b>Small</b>: 74M to 287M parameters. It runs locally, on CPU or GPU.</li>
-      <li><b>No fixed label list</b>: you write the labels when you run it (zero-shot).</li>
-      <li><b>One pass</b> through the encoder for every task in the schema.</li>
-      <li><b>Exact positions</b>: every answer comes with its character offsets in the text.</li>
-      <li><b>Multilingual</b>: gliner2.5-multi-v1 reads many languages; the small and base checkpoints are English.</li>
-      <li><b>Open</b>: Apache-2.0, and you can fine-tune it on your own data.</li>
-    </ul>
-    <p class="about-links">
-      <a href="https://huggingface.co/fastino/gliner2.5-multi-v1" target="_blank" rel="noopener">Model card</a>
-      <a href="https://github.com/fastino-ai/GLiNER2" target="_blank" rel="noopener">GLiNER2 on GitHub</a>
-      <a href="https://arxiv.org/abs/2507.18546" target="_blank" rel="noopener">Paper · arXiv 2507.18546</a>
-      <a href="https://fastino.ai" target="_blank" rel="noopener">Fastino AI</a>
-      <span>This page runs <code id="aboutModel">fastino/gliner2.5-multi-v1</code>.</span>
-    </p>
+    <p class="land-meta" id="landMeta">Loading the model…</p>
   </div>
-</dialog>
+  <p class="land-foot">Built on <a href="https://github.com/fastino-ai/GLiNER2" target="_blank" rel="noopener">GLiNER2</a> by <a href="https://fastino.ai" target="_blank" rel="noopener">Fastino AI</a> · Made by <a href="https://huggingface.co/polodealvarado" target="_blank" rel="noopener">@polodealvarado</a> · Independent project, not affiliated with Fastino.</p>
+</section>
 <div id="tip"></div>
 <div id="toast" role="alert"></div>
 
@@ -361,7 +354,7 @@ const ramp = (v, to = C.terra) => mix(C.paper, to, v);
 const diverge = (v) => (v >= 0 ? mix(C.paper, C.terra, v) : mix(C.paper, C.neg, -v));
 
 // ---------- state ----------
-const S = { task: "entities", step: 0, overview: true, label: 0, focusTok: 0, view: "flow", tab: "what", playing: false, mapLayer: 0, mapPlaying: false };
+const S = { task: "entities", about: false, step: 0, overview: true, label: 0, focusTok: 0, view: "flow", tab: "what", playing: false, mapLayer: 0, mapPlaying: false };
 let INFO = null, D = null, STEPS = [], plates = [];
 
 const EXAMPLES = {
@@ -404,17 +397,17 @@ const EXAMPLES = {
 };
 // one tab per task: which form fields it uses and which head plates sit on top of the shared trunk
 const TASKS = {
-  entities: { title: "Entities", fields: ["ent"], heads: ["decide"],
+  entities: { title: "Entities", blurb: "People, places, dates or any type you name.", fields: ["ent"], heads: ["decide"],
     intro: "Here it finds <b>entities</b>: stretches of text of the types you ask for (people, companies, dates…), even types it never saw during training." },
-  classification: { title: "Classification", fields: ["cls"], heads: ["clsScore", "clsDecide"],
+  classification: { title: "Classification", blurb: "A label for the whole text.", fields: ["cls"], heads: ["clsScore", "clsDecide"],
     intro: "Here it <b>classifies the whole text</b>: for each task you write, it picks the label that fits best. No stretch of text is cut out." },
-  relations: { title: "Relations", fields: ["rel"], heads: ["relPairs", "relDecide"],
+  relations: { title: "Relations", blurb: "Who works for whom, what is where.", fields: ["rel"], heads: ["relPairs", "relDecide"],
     intro: "Here it extracts <b>relations</b>: pairs of stretches linked by a type you name, such as Tim Cook → works_for → Apple." },
-  structure: { title: "Structure", fields: ["str"], heads: ["recInst", "recFields"],
+  structure: { title: "Structure", blurb: "Records with fields that belong together.", fields: ["str"], heads: ["recInst", "recFields"],
     intro: "Here it fills <b>structures</b>: records with fields, keeping which value belongs to which record." },
-  attributes: { title: "Attributes", fields: ["ent", "attr"], heads: ["decide", "attr"],
+  attributes: { title: "Attributes", blurb: "A label for each entity, such as its mood.", fields: ["ent", "attr"], heads: ["decide", "attr"],
     intro: "Here it finds entities and gives each one an <b>attribute</b>, such as the mood of each person." },
-  all: { title: "All tasks", fields: ["ent", "attr", "cls", "rel", "str"], heads: ["decide", "attr", "relPairs", "relDecide", "recInst", "recFields", "clsScore", "clsDecide", "result"],
+  all: { title: "All tasks", blurb: "Everything at once, in one pass.", fields: ["ent", "attr", "cls", "rel", "str"], heads: ["decide", "attr", "relPairs", "relDecide", "recInst", "recFields", "clsScore", "clsDecide", "result"],
     intro: "Here it does <b>every task at once</b>: one schema, one pass through the encoder, and every head reads the same vectors." },
 };
 const FIELDS = { ent: "#fEnt", attr: "#fAttr", cls: "#fCls", rel: "#fRel", str: "#fStr" };
@@ -1060,7 +1053,7 @@ function selectStep(i, { flow = false } = {}) {
   if (!D) return;
   i = clamp(i, 0, STEPS.length - 1);
   const prev = S.overview ? null : S.step;
-  S.step = i; S.overview = false;
+  S.step = i; S.overview = false; S.about = false;
   // span plates follow a span query, classification plates a classification choice
   const key = STEPS[i].key;
   if (SPANLIKE.has(key) && S.label >= D.Q) follow(0);
@@ -1073,7 +1066,7 @@ function selectStep(i, { flow = false } = {}) {
   $("#hint").style.opacity = 0;
 }
 function overview() {
-  S.overview = true; stopPlay();
+  S.overview = true; S.about = false; stopPlay();
   setTargets(); plates.forEach(attnArcs); towerView();
   renderRail(); renderPanel(); renderStepper();
 }
@@ -1225,7 +1218,11 @@ canvas.addEventListener("pointerup", (e) => {
 function resize() {
   const r = canvas.parentElement.getBoundingClientRect();
   renderer.setSize(r.width, r.height, false);
-  camera.aspect = r.width / r.height; camera.updateProjectionMatrix();
+  camera.aspect = r.width / r.height;
+  // on the start page the tower sits to the right of the text
+  if (document.body.classList.contains("landing") && r.width > 760) camera.setViewOffset(r.width, r.height, -r.width * 0.2, 0, r.width, r.height);
+  else camera.clearViewOffset();
+  camera.updateProjectionMatrix();
 }
 new ResizeObserver(resize).observe(canvas.parentElement);
 function setOpacity(p) {
@@ -1266,7 +1263,8 @@ requestAnimationFrame(frame);
 // ---------- side rail + stepper ----------
 function renderRail() {
   const cur = STEPS[S.step], rail = $("#rail");
-  rail.innerHTML = GROUPS.map((g, gi) => {
+  const about = `<button class="item ${S.about ? "on" : ""}" data-about type="button"><span class="num">i</span><span class="t">What is GLiNER2.5?</span><span class="s">The model, its five tasks and what people use it for.</span></button>`;
+  rail.innerHTML = about + GROUPS.map((g, gi) => {
     const on = !S.overview && S.view === "flow" && cur?.g === gi;
     const dots = g.key === "layer" && INFO ? `<div class="dots">${Array.from({ length: INFO.layers }, (_, l) => `<span class="${on && cur.layer === l + 1 ? "on" : ""}" data-layer="${l + 1}">${l + 1}</span>`).join("")}</div>` : "";
     return `<button class="item ${on ? "on" : ""}" data-g="${gi}" type="button"><span class="num">${String(gi + 1).padStart(2, "0")}</span><span class="t">${esc(g.title)}${g.key === "layer" && INFO ? ` · ${INFO.layers} layers` : ""}</span><span class="s">${esc(g.short)}</span>${dots}</button>`;
@@ -1625,6 +1623,35 @@ const CONTENT = {
       <dt>Similarity</dt><dd>Cosine similarity between the vector of the query marker and the first piece of each word, in ${INFO.hidden} dimensions.</dd></dl>`,
   },
 };
+function aboutHTML() {
+  return `<p>GLiNER2.5 is a family of small, open models from <b>Fastino AI</b> that turn text into structured data. You describe what you want in a schema (entity types, labels, relations, fields) and the model answers all of it <b>in one pass</b>, even for types it never saw during training.</p>
+    <h3>What it can do</h3>
+    <ul><li><b>Entities</b>: find stretches of text of any type you name, such as people, companies, dates or medications.</li>
+      <li><b>Classification</b>: give the whole text one label or several, such as topic, intent or tone.</li>
+      <li><b>Relations</b>: link two stretches with a typed, directed relation, such as Tim Cook → works_for → Apple.</li>
+      <li><b>Structures</b>: fill records with fields and keep which value belongs to which record.</li>
+      <li><b>Attributes</b>: give each entity a label from a group, such as the mood of each person.</li></ul>
+    <h3>What people use it for</h3>
+    <ul><li>Pull names, dates and amounts out of contracts, invoices or medical records.</li>
+      <li>Find personal data in documents before they are shared.</li>
+      <li>Route support tickets by intent and tone.</li>
+      <li>Turn news into a graph of who works where.</li>
+      <li>Fill a database from emails or free-text forms.</li>
+      <li>Measure the opinion about each product or person, not only about the whole text.</li></ul>
+    <h3>Why it stands out</h3>
+    <ul><li><b>Small</b>: 74M to 287M parameters. It runs locally, on CPU or GPU.</li>
+      <li><b>No fixed label list</b>: you write the labels when you run it (zero-shot).</li>
+      <li><b>One pass</b> through the encoder for every task in the schema.</li>
+      <li><b>Exact positions</b>: every answer comes with its character offsets in the text.</li>
+      <li><b>Multilingual</b>: gliner2.5-multi-v1 reads many languages; the small and base checkpoints are English.</li>
+      <li><b>Open</b>: Apache-2.0, and you can fine-tune it on your own data.</li></ul>
+    <div class="note key">Each tab above the sentence follows one task through the model. Start with <button type="button" class="linkish" data-task-go="entities">Entities</button> or try <button type="button" class="linkish" data-task-go="all">all tasks at once</button>.</div>
+    <p class="about-links"><a href="https://huggingface.co/${esc(INFO.name)}" target="_blank" rel="noopener">Model card</a>
+      <a href="https://github.com/fastino-ai/GLiNER2" target="_blank" rel="noopener">GLiNER2 on GitHub</a>
+      <a href="https://arxiv.org/abs/2507.18546" target="_blank" rel="noopener">Paper · arXiv 2507.18546</a>
+      <a href="https://fastino.ai" target="_blank" rel="noopener">Fastino AI</a>
+      <span>This page runs <code>${esc(INFO.name)}</code>.</span></p>`;
+}
 function techModel() {
   const P = INFO.params;
   return `<dl class="tech"><dt>Model</dt><dd><code>${esc(INFO.name)}</code>: ${esc(INFO.encoder)} encoder (mDeBERTa-v3) + boundary head.</dd>
@@ -1638,16 +1665,17 @@ function renderPanel() {
   // span plates offer span queries, classification plates offer choices, the trunk offers both
   const fk = !D || S.view === "map" || S.overview ? null : STEPS[S.step].key;
   const chip = (q, name) => `<button type="button" class="lab ${q === S.label ? "on" : ""}" style="--c:${qColor(q)}" data-q="${q}">${esc(name)}</button>`;
-  $("#follow").innerHTML = D ? `<span>Following:</span>${D.groups.filter((g) => (g.q.length && !CLSLIKE.has(fk)) || (g.c.length && !SPANLIKE.has(fk)))
+  $("#follow").innerHTML = D && !S.about ? `<span>Following:</span>${D.groups.filter((g) => (g.q.length && !CLSLIKE.has(fk)) || (g.c.length && !SPANLIKE.has(fk)))
     .map((g) => `<span class="fg"><small>${esc(groupTitle(g))}</small>${g.q.map((q) => chip(q, D.queries[q].short)).join("")}${g.c.map((ci) => chip(D.Q + ci, D.choices[ci].label)).join("")}</span>`).join("")}` : "";
   if (!D) return;
-  const key = S.view === "map" ? "map" : S.overview ? "overview" : STEPS[S.step].key;
+  const key = S.about ? "about" : S.view === "map" ? "map" : S.overview ? "overview" : STEPS[S.step].key;
   const st = STEPS[S.step], g = GROUPS[st.g];
-  $("#kicker").textContent = S.view === "map" ? "Alternative view" : S.overview ? `${STEPS.length} steps · ${GROUPS.length} stages` : `Step ${S.step + 1} of ${STEPS.length}`;
-  $("#ptitle").textContent = S.view === "map" ? "Meaning map" : S.overview ? "A sentence travels through the model" : stepTitle(st) + (st.key === "layer" ? " · Transformer" : "");
-  $("#plede").textContent = S.view === "map" ? "Where the model places each piece, layer by layer." : S.overview ? `From your text and schema to the answers, in ${GROUPS.length} stages.` : g.short;
+  $("#kicker").textContent = S.about ? "About the model" : S.view === "map" ? "Alternative view" : S.overview ? `${STEPS.length} steps · ${GROUPS.length} stages` : `Step ${S.step + 1} of ${STEPS.length}`;
+  $("#ptitle").textContent = S.about ? "What is GLiNER2.5?" : S.view === "map" ? "Meaning map" : S.overview ? "A sentence travels through the model" : stepTitle(st) + (st.key === "layer" ? " · Transformer" : "");
+  $("#plede").textContent = S.about ? "A short introduction to the model this page runs." : S.view === "map" ? "Where the model places each piece, layer by layer." : S.overview ? `From your text and schema to the answers, in ${GROUPS.length} stages.` : g.short;
   document.querySelectorAll("[role=tab]").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === S.tab));
-  $("#tabbody").innerHTML = CONTENT[key][S.tab](st);
+  $("#tabs").hidden = S.about;
+  $("#tabbody").innerHTML = S.about ? aboutHTML() : CONTENT[key][S.tab](st);
 }
 $("#tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (!b) return; S.tab = b.dataset.tab; renderPanel(); });
 $("#follow").addEventListener("click", (e) => { const b = e.target.closest("[data-q]"); if (b) setLabel(+b.dataset.q); });
@@ -1744,11 +1772,39 @@ function renderTasks() {
     $("#examples").append(b);
   });
 }
-$("#taskbar").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-task]");
-  if (!b || b.dataset.task === S.task) return;
-  S.task = b.dataset.task; S.overview = true; S.step = 0;
+function setTask(task) {
+  if (task === S.task) return;
+  S.task = task; S.overview = true; S.step = 0;
   renderTasks(); fill(EXAMPLES[S.task][0]); analyze();
+}
+$("#taskbar").addEventListener("click", (e) => { const b = e.target.closest("[data-task]"); if (b) setTask(b.dataset.task); });
+// start page: the tower turns and information keeps climbing it, unless the reader asked for less motion
+let ambient = null;
+function showLanding() {
+  document.body.classList.add("landing");
+  stopPlay(); if (S.view !== "flow") setView("flow");
+  if (D) overview();
+  const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  controls.autoRotate = !calm;
+  clearInterval(ambient);
+  let i = 0;
+  if (!calm) ambient = setInterval(() => { if (plates.length > 1) { i = (i + 1) % (plates.length - 1); runFlow(flowPairs(plates[i], plates[i + 1])); } }, 1300);
+  resize();
+}
+function enterApp(task) {
+  document.body.classList.remove("landing");
+  clearInterval(ambient); controls.autoRotate = false; resize();
+  if (task && task !== S.task) setTask(task); else if (D) overview();
+}
+function showAbout() { enterApp(); S.about = true; renderRail(); renderPanel(); }
+$("#landTasks").innerHTML = Object.entries(TASKS).map(([k, t]) => `<button type="button" data-enter="${k}"><b>${t.title}</b><span>${t.blurb}</span></button>`).join("");
+$("#landTasks").addEventListener("click", (e) => { const b = e.target.closest("[data-enter]"); if (b) enterApp(b.dataset.enter); });
+$("#landGo").onclick = () => enterApp();
+$("#brand").onclick = showLanding;
+document.addEventListener("click", (e) => {
+  if (e.target.closest("[data-about]")) showAbout();
+  const t = e.target.closest("[data-task-go]");
+  if (t) setTask(t.dataset.taskGo);
 });
 $("#prev").onclick = () => { stopPlay(); S.overview ? selectStep(0) : selectStep(S.step - 1); };
 $("#next").onclick = () => { stopPlay(); S.overview ? selectStep(0) : selectStep(S.step + 1, { flow: true }); };
@@ -1758,12 +1814,9 @@ $("#vFlow").onclick = () => setView("flow");
 $("#vMap").onclick = () => setView("map");
 $("#mapLayer").oninput = (e) => { S.mapLayer = +e.target.value; S.mapPlaying = false; mapRefresh(); };
 $("#mapPlay").onclick = mapPlay;
-$("#aboutBtn").onclick = () => $("#about").showModal();
-document.addEventListener("click", (e) => { if (e.target.closest("[data-about]")) $("#about").showModal(); });
-$("#about").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); }); // click on the backdrop
 $("#trails").onchange = mapRefresh;
 addEventListener("keydown", (e) => {
-  if (!D || e.target.closest("input, textarea") || $("#about").open) return;
+  if (!D || e.target.closest("input, textarea") || document.body.classList.contains("landing")) return;
   if (e.key === "ArrowRight") { e.preventDefault(); $("#next").click(); }
   if (e.key === "ArrowLeft") { e.preventDefault(); $("#prev").click(); }
   if (e.key === " ") { e.preventDefault(); S.view === "map" ? mapPlay() : play(); }
@@ -1771,11 +1824,12 @@ addEventListener("keydown", (e) => {
 
 // ---------- start ----------
 (async () => {
-  renderRail();
+  renderRail(); showLanding();
   await Promise.all(['500 52px Inter', '600 46px Inter', '600 58px "Playfair Display"', '500 44px "IBM Plex Mono"'].map((f) => document.fonts.load(f))).catch(() => {});
   try {
     INFO = await (await fetch("/api/info")).json();
   } catch {
+    $("#landMeta").textContent = "Server not available. Start it from this folder with: uv run server.py";
     $("#ptitle").textContent = "Server not available";
     $("#tabbody").innerHTML = `<p>Start the server from this folder:</p><p><code>uv run server.py</code></p><p>and open <code>http://localhost:8765</code>.</p>`;
     return;
@@ -1783,7 +1837,7 @@ addEventListener("keydown", (e) => {
   GROUPS = groupsFor(null); buildSteps(INFO.layers);
   $("#mapLayer").max = INFO.layers;
   $("#modelLink").href = `https://huggingface.co/${INFO.name}`;
-  $("#aboutModel").textContent = INFO.name;
+  $("#landMeta").textContent = `${INFO.name} · ${Math.round(INFO.params.total / 1e6)}M parameters · ${INFO.layers} Transformer layers · running on this server`;
   renderTasks(); renderRail();
   fill(EXAMPLES[S.task][0]);
   analyze();

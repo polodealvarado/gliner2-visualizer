@@ -35,6 +35,10 @@ The first run downloads the model from Hugging Face (~1.1 GB).
 
 ## What you see
 
+The page opens on a start page: a short introduction in front of the live 3D tower, which turns while information climbs it. Pick a task there, or press "Start exploring". The title in the top bar brings the start page back.
+
+The left column starts with "What is GLiNER2.5?", a short introduction to the model, followed by the stages of the current task.
+
 One tab per task: Entities, Classification, Relations, Structure, Attributes and All tasks. Each tab shows only the fields and examples of its task.
 
 The tower is the same at the bottom for every task: text and schema, tokenizer, embeddings, 12 Transformer layers, and word and query vectors. The span stages follow (gaps between words, "starts? ends?", candidates, scoring), shared by entity types, attribute labels, relation roles and structure fields. On top sits the head of the task: entity decision, attributes, head × tail pairs and relation scores, record instances and field assignment, or label scores and label decision. "All tasks" stacks every head and ends with all the answers.
