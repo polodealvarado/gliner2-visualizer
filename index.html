@@ -7,130 +7,121 @@
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #EDF0F2; --paper: #FAFBFC; --wash: #F2F5F7; --line: #D3DADF; --ink: #1A2024; --ink-2: #2E373D; --muted: #5B656C; --faint: #97A1A8;
-  --hl: #F7E733; --hl-edge: #E2CF14; --focus: #2F4BD6;
-  --terra: #E0561F; --slate: #2F4BD6; --olive: #1F9D55; --sand: #B7C2C9; --cls: #7B4FE0;
-  --display: "Archivo", "IBM Plex Sans", sans-serif; --sans: "IBM Plex Sans", system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --bg: #F3EEE5; --paper: #FBF8F2; --wash: #F7F1E7; --line: #E3D9C8; --ink: #2B2926; --muted: #6E685F; --faint: #A39C90;
+  --terra: #B85C3C; --terra-dark: #9C4A2E; --slate: #4D6170; --sand: #D4B48C; --olive: #7C8A5A;
+  --serif: "Playfair Display", Georgia, serif; --sans: "Inter", system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); }
 body { display: grid; grid-template-rows: auto auto 1fr auto; height: 100vh; overflow: hidden; }
+body > *, main > * { min-width: 0; } /* grid items default to min-width: auto, which lets the tab bar and the rail widen the page instead of scrolling */
 button, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
-:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--terra); outline-offset: 2px; }
 
 /* top bar: brand, task tabs, status */
-.appbar { display: flex; align-items: center; gap: 24px; padding: 10px 24px; background: var(--ink); color: var(--paper); }
-.brand { margin: 0; font: 700 19px/1 var(--display); font-stretch: 125%; letter-spacing: .005em; white-space: nowrap; }
-/* signature: a highlighter stroke, swept in once on load */
-.brand mark { color: var(--ink); padding: .14em .34em; margin-left: .1em; border-radius: .55em .2em .6em .25em / .35em .6em .3em .6em; background: linear-gradient(97deg, transparent 0, var(--hl) .3em, var(--hl-edge) 58%, var(--hl) calc(100% - .3em), transparent 100%) no-repeat; background-size: 100% 100%; animation: swipe .9s .25s cubic-bezier(.6, 0, .2, 1) both; }
-@keyframes swipe { from { background-size: 0 100%; } }
-.appbar .seg { background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .13); }
-.appbar .seg button { color: rgba(250, 251, 252, .7); }
-.appbar .seg button:hover { color: #fff; }
-.appbar .seg button.on { background: var(--paper); color: var(--ink); }
-#status { margin-left: auto; font: 12px var(--mono); color: rgba(250, 251, 252, .5); white-space: nowrap; }
-
-/* composer: sentence, threshold, task fields, examples */
-.composer { display: grid; grid-template-columns: 1fr 210px auto; gap: 10px 16px; align-items: end; padding: 14px 24px 12px; background: var(--paper); border-bottom: 1px solid var(--line); }
-.tasks { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 16px; }
-.field label { display: block; font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 5px 2px; }
-.field input[type=text] { width: 100%; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 14px; }
-.field input[type=text]:focus { border-color: var(--ink); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 18%, transparent); }
-.composer #text { font-size: 16.5px; padding: 10px 14px; }
-.thr { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
-.thr input { flex: 1; accent-color: var(--ink); }
+.appbar { display: flex; align-items: center; gap: 24px; padding: 12px 24px; border-bottom: 1px solid var(--line); }
+.brand { margin: 0; font: 600 25px/1.1 var(--serif); letter-spacing: -0.01em; white-space: nowrap; }
+/* composer: one row (sentence, task fields, threshold, Analyze); with more than two fields they get a row of their own */
+.composer { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 16px; padding: 14px 24px 12px; background: var(--paper); border-bottom: 1px solid var(--line); }
+.composer > .field:first-child { flex: 2 1 360px; }
+.composer #text { font-size: 16px; }
+.tasks { display: contents; }
+.tasks > .field { flex: 1 1 220px; order: 1; }
+.thr-field { flex: 0 0 170px; order: 2; }
+.composer > .primary { order: 3; }
+.composer.wide .tasks { display: grid; order: 4; flex-basis: 100%; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px 16px; }
+pre.json { font: 11.5px/1.5 var(--mono); background: var(--wash); border-radius: 10px; padding: 10px 12px; max-height: 340px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
+.field label { display: block; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px 2px; }
+.field input[type=text] { width: 100%; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; }
+.field input[type=text]:focus { border-color: var(--terra); outline: none; }
+.thr { display: flex; align-items: center; gap: 8px; padding: 9px 0; }
+.thr input { flex: 1; accent-color: var(--terra); }
 .thr output { font: 500 13px var(--mono); width: 40px; }
-.primary { background: var(--ink); color: var(--paper); border: 0; border-radius: 10px; padding: 11px 24px; font-weight: 600; letter-spacing: .01em; }
-.primary:hover { background: var(--ink-2); }
+.primary { background: var(--terra); color: var(--paper); border: 0; border-radius: 10px; padding: 10px 18px; font-weight: 600; }
+.primary:hover { background: var(--terra-dark); }
 .primary:disabled { opacity: .55; cursor: progress; }
-.sub { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
-.sub > span { font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; margin-right: 4px; }
-.sub button { background: none; border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; color: var(--ink); }
-.sub button:hover { border-color: var(--ink); }
+.sub { order: 5; flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+.sub > span { margin-right: 4px; }
+.sub button { background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; color: var(--ink); }
+.sub button:hover { border-color: var(--terra); color: var(--terra); }
+#status { margin-left: auto; font: 12px var(--mono); color: var(--faint); white-space: nowrap; }
 
-main { display: grid; grid-template-columns: 228px 1fr 440px; min-height: 0; }
-body > *, main > * { min-width: 0; } /* grid items default to min-width: auto, which lets the tab bar and the rail widen the page instead of scrolling */
-#rail { border-right: 1px solid var(--line); overflow-y: auto; padding: 12px 10px; }
-#rail .item { display: grid; align-content: start; grid-template-columns: 24px 1fr; gap: 1px 6px; width: 100%; text-align: left; background: none; border: 0; border-left: 2px solid transparent; border-radius: 0 10px 10px 0; padding: 7px 10px 7px 9px; color: var(--muted); }
+main { display: grid; grid-template-columns: 236px 1fr 430px; min-height: 0; }
+#rail { border-right: 1px solid var(--line); overflow-y: auto; padding: 14px 10px; }
+#rail .item { display: grid; align-content: start; grid-template-columns: 26px 1fr; gap: 2px 6px; width: 100%; text-align: left; background: none; border: 0; border-left: 3px solid transparent; border-radius: 0 10px 10px 0; padding: 8px 10px 8px 9px; color: var(--muted); }
 #rail .item:hover { background: var(--wash); color: var(--ink); }
-#rail .item.on { background: var(--paper); border-left-color: var(--ink); color: var(--ink); box-shadow: 0 1px 2px rgba(20, 30, 40, .06); }
-#rail .num { font: 500 11.5px/1.9 var(--mono); color: var(--faint); }
-#rail .t { font-weight: 600; font-size: 13.5px; }
-#rail .s { grid-column: 2; font-size: 12px; line-height: 1.4; }
+#rail .item.on { background: var(--paper); border-left-color: var(--terra); color: var(--ink); }
+#rail .num { font: 500 12px/1.9 var(--mono); color: var(--faint); }
+#rail .t { font-weight: 600; font-size: 14px; }
+#rail .s { grid-column: 2; font-size: 12.5px; line-height: 1.4; }
 .dots { grid-column: 2; display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 6px; }
 .dots span { height: 15px; border-radius: 4px; background: var(--line); font: 9px/15px var(--mono); text-align: center; color: var(--muted); }
-.dots span.on { background: var(--ink); color: var(--paper); }
+.dots span.on { background: var(--terra); color: var(--paper); }
 
 #stage { position: relative; min-height: 0; overflow: hidden; }
 #scene { display: block; width: 100%; height: 100%; }
 .hud { position: absolute; display: flex; gap: 8px; align-items: center; }
 .hud.tl { top: 14px; left: 14px; } .hud.tr { top: 14px; right: 14px; }
-.hud.bc { bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 6px 8px; box-shadow: 0 8px 24px rgba(20, 30, 40, .08); }
+.hud.bc { bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 6px 8px; box-shadow: 0 6px 22px rgba(70, 50, 30, .08); }
 .seg { display: inline-flex; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
-.seg button { border: 0; background: none; border-radius: 7px; padding: 5px 11px; font-size: 13px; color: var(--muted); }
+.seg button { border: 0; background: none; border-radius: 7px; padding: 5px 11px; font-size: 13px; color: var(--muted); white-space: nowrap; }
 .seg button.on { background: var(--ink); color: var(--paper); }
 .ghost { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 6px 11px; font-size: 13px; display: inline-flex; gap: 6px; align-items: center; color: var(--muted); }
 .ghost:hover { color: var(--ink); border-color: var(--faint); }
 .icon { width: 34px; height: 34px; border: 0; background: none; border-radius: 9px; display: grid; place-items: center; color: var(--ink); }
 .icon:hover { background: var(--wash); }
-.icon.play { background: var(--ink); color: var(--paper); }
-.icon.play:hover { background: var(--ink-2); }
+.icon.play { background: var(--terra); color: var(--paper); }
+.icon.play:hover { background: var(--terra-dark); }
 .icon svg, .ghost svg { width: 16px; height: 16px; }
 #stepLabel { font-size: 13px; color: var(--muted); padding: 0 8px; min-width: 210px; text-align: center; white-space: nowrap; }
 #stepLabel b { color: var(--ink); font-weight: 600; }
 #mapCtl { display: none; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); padding: 0 6px; }
-#mapCtl input[type=range] { width: 220px; accent-color: var(--ink); }
+#mapCtl input[type=range] { width: 220px; accent-color: var(--terra); }
 #mapCtl output { font: 500 13px var(--mono); color: var(--ink); width: 86px; }
 #mapCtl label { display: inline-flex; gap: 5px; align-items: center; }
-#busy { position: absolute; inset: 0; display: none; place-items: center; background: rgba(237, 240, 242, .76); font: 600 16px var(--display); font-stretch: 112%; color: var(--muted); }
+#busy { position: absolute; inset: 0; display: none; place-items: center; background: rgba(243, 238, 229, .72); font: 500 italic 20px var(--serif); color: var(--muted); }
 #busy.on { display: grid; }
-#hint { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); font-size: 13px; color: var(--muted); background: rgba(250, 251, 252, .92); padding: 5px 12px; border-radius: 8px; pointer-events: none; transition: opacity .4s; }
+#hint { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); font-size: 13px; color: var(--muted); background: rgba(251, 248, 242, .9); padding: 5px 12px; border-radius: 8px; pointer-events: none; transition: opacity .4s; }
 
-#tip { position: fixed; z-index: 10; pointer-events: none; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; max-width: 290px; font-size: 13px; line-height: 1.45; box-shadow: 0 10px 28px rgba(20, 30, 40, .14); opacity: 0; transition: opacity .12s; }
+#tip { position: fixed; z-index: 10; pointer-events: none; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; max-width: 290px; font-size: 13px; line-height: 1.45; box-shadow: 0 8px 24px rgba(70, 50, 30, .12); opacity: 0; transition: opacity .12s; }
 #tip b { display: block; font-weight: 600; }
 #tip span { color: var(--muted); display: block; }
 #tip code { font: 12px var(--mono); }
 #toast { position: fixed; left: 50%; top: 18px; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 9px 16px; border-radius: 10px; font-size: 14px; display: none; z-index: 20; max-width: 90vw; }
 
-#panel { border-left: 1px solid var(--line); overflow-y: auto; background: var(--paper); padding: 20px 26px 40px; }
-.kicker { font: 500 11px var(--mono); color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
-#panel h2 { font: 700 25px/1.15 var(--display); font-stretch: 112%; margin: 6px 0 6px; letter-spacing: -0.005em; }
-.lede { color: var(--muted); margin: 0 0 14px; }
+#panel { border-left: 1px solid var(--line); overflow-y: auto; background: var(--paper); padding: 18px 24px 40px; }
 .follow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; color: var(--muted); background: var(--wash); border: 1px solid var(--line); border-radius: 12px; padding: 9px 11px; margin: 0 0 16px; }
 .follow:empty { display: none; }
-.follow > span:first-child { font: 500 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
-.follow .fg { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-right: 8px; }
-.follow .fg small { font: 500 11px var(--mono); color: var(--faint); }
+.kicker { font: 500 12px var(--mono); color: var(--terra); letter-spacing: .02em; }
+#panel h2 { font: 600 27px/1.15 var(--serif); margin: 4px 0 6px; letter-spacing: -0.01em; }
+.lede { color: var(--muted); margin: 0 0 14px; }
 [role=tablist] { display: flex; gap: 18px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
 [role=tab] { background: none; border: 0; border-bottom: 2px solid transparent; padding: 6px 0 8px; font-size: 14px; color: var(--muted); margin-bottom: -1px; }
-[role=tab][aria-selected=true] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+[role=tab][aria-selected=true] { color: var(--ink); border-bottom-color: var(--terra); font-weight: 600; }
 #tabbody p { margin: 0 0 12px; }
-#tabbody h3 { font: 700 15px var(--display); font-stretch: 112%; margin: 20px 0 8px; }
+#tabbody h3 { font: 600 17px var(--serif); margin: 20px 0 8px; }
 #tabbody ol, #tabbody ul { padding-left: 20px; margin: 0 0 12px; }
 #tabbody li { margin-bottom: 6px; }
 .note { background: var(--wash); border-left: 3px solid var(--sand); padding: 10px 12px; border-radius: 0 8px 8px 0; font-size: 14px; margin: 12px 0; }
-.note.key { border-left-color: var(--hl-edge); background: color-mix(in srgb, var(--hl) 16%, var(--paper)); }
+.note.key { border-left-color: var(--terra); }
 .mono, code { font-family: var(--mono); font-size: 12.5px; }
 code { background: var(--wash); padding: 1px 5px; border-radius: 5px; }
 .lab { display: inline-flex; align-items: center; gap: 5px; border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); background: color-mix(in srgb, var(--c) 10%, var(--paper)); border-radius: 999px; padding: 1px 9px 1px 7px; font-size: 13px; line-height: 1.5; white-space: nowrap; color: var(--ink); }
 .lab::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
 button.lab:hover { border-color: var(--c); }
-button.lab.on { background: var(--c); color: #fff; border-color: var(--c); }
-button.lab.on::before { background: #fff; }
-.pc { display: inline-block; font: 12.5px/1.6 var(--mono); background: #E4E9EC; border-radius: 6px; padding: 0 6px; margin: 2px 1px; white-space: pre; }
-.pc.marker { background: var(--slate); color: #fff; }
-.pc.schema { background: #DCE2E6; }
-.pc.desc { background: #EEF1F3; color: var(--muted); }
+button.lab.on { background: var(--c); color: var(--paper); border-color: var(--c); }
+button.lab.on::before { background: var(--paper); }
+.pc { display: inline-block; font: 12.5px/1.6 var(--mono); background: #EFE7DA; border-radius: 6px; padding: 0 6px; margin: 2px 1px; white-space: pre; }
+.pc.marker { background: var(--slate); color: var(--paper); }
+.pc.schema { background: #E4E7E8; }
 .pc .id { color: var(--faint); font-size: 10.5px; margin-left: 4px; }
-.pc.marker .id { color: #C8D0FF; }
+.pc.marker .id { color: #C9D2D8; }
 .seq { font: 13px/2 var(--mono); background: var(--wash); border-radius: 10px; padding: 10px 12px; word-break: break-word; }
-.seq b { color: #fff; background: var(--c, var(--slate)); border-radius: 5px; padding: 1px 5px; font-weight: 500; }
-.seq .segl { display: block; }
-.seq small { font: 500 10.5px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .06em; margin-right: 6px; }
+.seq b { color: var(--paper); background: var(--c, var(--slate)); border-radius: 5px; padding: 1px 5px; font-weight: 500; }
 dl.legend { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 14px; margin: 12px 0; }
 dl.legend dt { font: 500 12.5px var(--mono); }
 dl.legend dd { margin: 0; color: var(--muted); }
@@ -141,7 +132,7 @@ dl.legend dd { margin: 0; color: var(--muted); }
 .strips .strip { margin: 0; height: 13px; }
 .bars { display: grid; grid-template-columns: auto 1fr 46px; gap: 5px 10px; align-items: center; font-size: 13px; }
 .bar { height: 9px; border-radius: 5px; background: var(--line); overflow: hidden; }
-.bar i { display: block; height: 100%; background: var(--ink-2); border-radius: 5px; }
+.bar i { display: block; height: 100%; background: var(--terra); border-radius: 5px; }
 .num { font: 12.5px var(--mono); text-align: right; color: var(--muted); }
 .heat { border-collapse: separate; border-spacing: 2px; font-size: 12px; margin: 6px 0 12px; }
 .heat th { font-weight: 500; color: var(--muted); text-align: right; padding-right: 6px; white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
@@ -149,17 +140,15 @@ dl.legend dd { margin: 0; color: var(--muted); }
 .heat td { width: 20px; height: 16px; border-radius: 3px; }
 .heat td.cur { outline: 2px solid var(--ink); outline-offset: -1px; }
 .heat td.v { width: auto; min-width: 44px; height: 22px; font: 11.5px var(--mono); text-align: center; padding: 0 5px; }
-.heat td.v.hit { font-weight: 600; color: #fff; }
+.heat td.v.hit { font-weight: 600; color: var(--paper); }
 .big { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 8px 0 14px; }
 .big div { background: var(--wash); border-radius: 10px; padding: 10px 12px; }
 .big b { display: block; font: 500 24px var(--mono); }
 .big span { font-size: 12.5px; color: var(--muted); }
-/* results read like highlighter marks, one ink per query */
-.sentence { font-size: 17px; line-height: 2.35; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
-.sentence mark { color: var(--ink); padding: .12em .32em; margin: 0 -.06em; border-radius: .6em .25em .7em .3em / .3em .6em .3em .7em; -webkit-box-decoration-break: clone; box-decoration-break: clone;
-  background: linear-gradient(98deg, transparent 0, color-mix(in srgb, var(--c) 36%, transparent) .3em, color-mix(in srgb, var(--c) 26%, transparent) 55%, color-mix(in srgb, var(--c) 40%, transparent) calc(100% - .3em), transparent 100%); }
-.sentence mark sup { font: 600 9.5px var(--mono); color: color-mix(in srgb, var(--c) 78%, var(--ink)); margin-left: 4px; vertical-align: .7em; letter-spacing: .04em; text-transform: uppercase; }
-.gp { display: inline-block; font: 500 10.5px/1 var(--mono); color: #fff; background: var(--slate); border-radius: 4px; padding: 2px 4px; margin: 0 3px; vertical-align: middle; }
+.sentence { font-size: 17px; line-height: 2.2; background: var(--wash); border-radius: 10px; padding: 10px 14px; }
+.sentence mark { background: color-mix(in srgb, var(--c) 18%, var(--paper)); border-bottom: 2px solid var(--c); padding: 2px 3px; border-radius: 4px; color: var(--ink); }
+.sentence mark sup { font: 600 10px var(--sans); color: var(--c); margin-left: 3px; vertical-align: top; }
+.gp { display: inline-block; font: 500 10.5px/1 var(--mono); color: var(--paper); background: var(--slate); border-radius: 4px; padding: 2px 4px; margin: 0 3px; vertical-align: middle; }
 .marks { border-collapse: separate; border-spacing: 2px; font-size: 12px; margin: 8px 0 12px; }
 .marks th { font-weight: 500; text-align: right; color: var(--muted); padding-right: 6px; }
 .marks td { height: 22px; min-width: 20px; border-radius: 3px; font: 10.5px var(--mono); text-align: center; color: var(--ink); }
@@ -171,38 +160,38 @@ dl.legend dd { margin: 0; color: var(--muted); }
 .tech dt { font: 500 12.5px var(--mono); color: var(--ink); margin-top: 10px; }
 .tech dd { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
 .file { font: 12px var(--mono); color: var(--faint); }
-pre.json { font: 11.5px/1.5 var(--mono); background: var(--wash); border-radius: 10px; padding: 10px 12px; max-height: 340px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
+.follow .fg { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-right: 8px; }
+.follow .fg small { font: 500 11px var(--mono); color: var(--faint); }
+.seq .segl { display: block; }
+.seq small { font: 500 10.5px var(--sans); color: var(--faint); text-transform: uppercase; letter-spacing: .05em; margin-right: 6px; }
+.pc.desc { background: #F1E6D3; color: var(--muted); }
 
 /* footer: credits */
-.foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; padding: 8px 24px; border-top: 1px solid var(--line); background: var(--paper); font-size: 12.5px; color: var(--muted); }
-.foot a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--faint); text-underline-offset: 3px; }
-.foot a:hover { text-decoration-color: var(--ink); }
+.foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; padding: 8px 24px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+.foot a { color: var(--ink); text-decoration: underline dotted var(--faint); text-underline-offset: 3px; }
+.foot a:hover { color: var(--terra); }
 .foot .aside { margin-left: auto; color: var(--faint); }
 
 @media (max-width: 1100px) {
   body { height: auto; overflow: auto; }
   .appbar { flex-wrap: wrap; gap: 10px 18px; }
   .appbar .seg { order: 3; width: 100%; overflow-x: auto; }
-  .composer { grid-template-columns: 1fr auto; }
-  .composer > .field:first-child { grid-column: 1 / -1; }
+  .composer > .field:first-child { flex-basis: 100%; }
   main { grid-template-columns: 1fr; }
   #rail { display: flex; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 8px 16px; gap: 4px; }
-  #rail .item { min-width: 170px; border-left: 0; border-bottom: 2px solid transparent; border-radius: 10px 10px 0 0; }
-  #rail .item.on { border-bottom-color: var(--ink); }
+  #rail .item { min-width: 170px; border-left: 0; border-bottom: 3px solid transparent; border-radius: 10px 10px 0 0; }
+  #rail .item.on { border-bottom-color: var(--terra); }
   #stage { height: 60vh; }
   #panel { border-left: 0; border-top: 1px solid var(--line); padding: 18px 16px 40px; }
   #stepLabel { min-width: 0; }
 }
 @media (max-width: 560px) {
   .appbar, .composer, .foot { padding-left: 16px; padding-right: 16px; }
-  .composer, .tasks { grid-template-columns: 1fr; }
+  .composer > *, .tasks > .field { flex-basis: 100%; }
+  .composer.wide .tasks { grid-template-columns: 1fr; order: 1; } /* on phones, fill the fields first, then Analyze */
   .foot .aside { margin-left: 0; }
   #stepLabel, #mapCtl input[type=range] { display: none; }
   .hud.tr { top: 60px; left: 14px; right: auto; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .brand mark { animation: none; }
-  #hint, #tip { transition: none; }
 }
 </style>
 <script type="importmap">
@@ -214,13 +203,13 @@ pre.json { font: 11.5px/1.5 var(--mono); background: var(--wash); border-radius:
 </head>
 <body>
 <header class="appbar">
-  <h1 class="brand">Inside <mark>GLiNER2.5</mark></h1>
+  <h1 class="brand">Inside GLiNER2.5</h1>
   <nav class="seg taskbar" id="taskbar" aria-label="Task"></nav>
   <span id="status"></span>
 </header>
 <form id="form" class="composer">
   <div class="field"><label for="text">Your sentence</label><input id="text" type="text" autocomplete="off" spellcheck="false"></div>
-  <div class="field"><label for="thr">Threshold</label><div class="thr"><input id="thr" type="range" min="0.05" max="0.95" step="0.05" value="0.5"><output id="thrOut">0.50</output></div></div>
+  <div class="field thr-field"><label for="thr">Threshold</label><div class="thr"><input id="thr" type="range" min="0.05" max="0.95" step="0.05" value="0.5"><output id="thrOut">0.50</output></div></div>
   <button class="primary" id="go" type="submit">Analyze</button>
   <div class="tasks">
     <div class="field" data-f="ent"><label for="fEnt">Entities</label><input id="fEnt" type="text" autocomplete="off" spellcheck="false" placeholder="person = named people, company" title="Entity types, comma-separated. Add a description after =."></div>
@@ -229,7 +218,7 @@ pre.json { font: 11.5px/1.5 var(--mono); background: var(--wash); border-radius:
     <div class="field" data-f="rel"><label for="fRel">Relations</label><input id="fRel" type="text" autocomplete="off" spellcheck="false" placeholder="works_for, located_in" title="Relation types, comma-separated."></div>
     <div class="field" data-f="str"><label for="fStr">Structure</label><input id="fStr" type="text" autocomplete="off" spellcheck="false" placeholder="launch: product*, company, place" title="name: fields. * marks the anchor field (default: the first). Separate structures with ;"></div>
   </div>
-  <div class="sub" id="examples"><span>Try</span></div>
+  <div class="sub" id="examples"><span>Examples:</span></div>
 </form>
 <main>
   <nav id="rail" aria-label="Model stages"></nav>
@@ -296,9 +285,9 @@ const f2 = (v) => Number(v).toFixed(2);
 const nf = (n) => Number(n).toLocaleString("en-US");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const argmax = (a) => a.reduce((b, v, i) => (v > a[b] ? i : b), 0);
-const C = { bg: "#EDF0F2", paper: "#FAFBFC", wash: "#F2F5F7", plate: "#E1E6EA", ink: "#1A2024", muted: "#5B656C", word: "#A9B5BD", word2: "#C9D1D6",
-  terra: "#E0561F", slate: "#2F4BD6", sand: "#8F9BA3", olive: "#1F9D55", schema: "#DCE1E4", cls: "#7B4FE0" };
-const LABEL_COLORS = ["#E0561F", "#2F7FD8", "#1F9D55", "#D99A00", "#C2378A", "#0F9CA6", "#D3344A", "#6E9A1C", "#9C5B2E", "#5A5FD1", "#C46FA0", "#46707F"];
+const C = { bg: "#F3EEE5", paper: "#FBF8F2", wash: "#F7F1E7", plate: "#E8DFCE", ink: "#2B2926", muted: "#6E685F", word: "#CBA275", word2: "#DEC6A4",
+  terra: "#B85C3C", slate: "#4D6170", sand: "#D4B48C", olive: "#7C8A5A", schema: "#C3C9CD", cls: "#6A5A99" };
+const LABEL_COLORS = ["#B85C3C", "#4D6170", "#7C8A5A", "#C0913A", "#8A5A6E", "#4F7F78", "#8C6A4F", "#3E7CA6", "#A84E62", "#6B8F3A", "#9C7A2E", "#5C6E8F"];
 const LC = (q) => LABEL_COLORS[q % LABEL_COLORS.length];
 const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const mix = (a, b, t) => { const A = rgb(a), B = rgb(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * clamp(t, 0, 1))).join(",")})`; };
@@ -442,8 +431,8 @@ const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 500);
 camera.position.set(20, 20, 40);
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.autoRotateSpeed = 0.5;
-scene.add(new THREE.HemisphereLight("#FFFFFF", "#C4CDD3", 1.6));
-const sun = new THREE.DirectionalLight("#FFFFFF", 1.8);
+scene.add(new THREE.HemisphereLight("#FFF8EE", "#CDBEA6", 1.6));
+const sun = new THREE.DirectionalLight("#FFF0DC", 1.9);
 sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004; sun.shadow.radius = 3;
 scene.add(sun, sun.target);
 const shadowCatcher = new THREE.Mesh(new THREE.CircleGeometry(40, 48), new THREE.ShadowMaterial({ opacity: 0.07 }));
@@ -458,7 +447,7 @@ const TOP = 0.08;
 const mat = (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.84, metalness: 0, transparent: true });
 
 const texCache = new Map();
-function textTex(str, font = '500 52px "IBM Plex Sans", sans-serif', color = C.ink) {
+function textTex(str, font = '500 52px Inter, sans-serif', color = C.ink) {
   const key = font + color + str;
   if (texCache.has(key)) return texCache.get(key);
   const c = document.createElement("canvas"), g = c.getContext("2d");
@@ -504,7 +493,7 @@ const tokColor = (t) => {
   if (t.ci != null) return t.kind === "marker" ? C.cls : mix(C.cls, "#FFFFFF", 0.55);
   if (t.kind === "marker") return t.label != null ? LC(t.label) : C.slate;
   if (t.lab != null) return mix(LC(t.lab), "#FFFFFF", 0.5);
-  if (t.desc) return "#E4E8EB";
+  if (t.desc) return "#E9DDC8";
   return C.schema;
 };
 function row(items, widthOf, gap) {
@@ -527,7 +516,7 @@ function makePlate(st, idx, y, width, depth, cz = 0) {
   const p = { idx, step: st, y, width, depth, cz, group, base, tiles: [], hits: [base], labels: new THREE.Group(), extra: new THREE.Group(),
     anch: { tok: [], word: [], label: [], choice: [], gap: [], start: [], end: [], cand: [], pair: [], inst: [] }, op: 1, target: 1 };
   group.add(p.labels, p.extra);
-  const title = sprite(stepTitle(st), st.key === "layer" ? 0.34 : 0.46, `700 ${st.key === "layer" ? 42 : 54}px Archivo, sans-serif`, C.ink);
+  const title = sprite(stepTitle(st), st.key === "layer" ? 0.34 : 0.46, `600 ${st.key === "layer" ? 44 : 58}px "Playfair Display", serif`, C.ink);
   title.center.set(1, 0.5);
   title.position.set(-width / 2 - 0.35, 0.15, 0);
   group.add(title);
@@ -658,7 +647,7 @@ const BUILD = {
       js.forEach((j) => paint(p, j, LC(it.label), 0.3));
       const [x0, x1] = spanEdges(js), n = a.labels.length, w = Math.min(0.55, (x1 - x0 - 0.1) / n), z = -0.35 - 0.75 * ai, best = argmax(it.probs);
       a.labels.forEach((l, li) => addTile(p, x0 + ((x1 - x0) * (li + 0.5)) / n, z, w, 0.36, 0.03 + 1.2 * it.probs[li], LC(attrQ(a, l)), { type: "attr", ai, li, item: it }));
-      const tag = sprite(`${a.group}: ${a.labels[best]} · ${f2(it.probs[best])}`, 0.28, '600 46px "IBM Plex Sans", sans-serif', LC(attrQ(a, a.labels[best])));
+      const tag = sprite(`${a.group}: ${a.labels[best]} · ${f2(it.probs[best])}`, 0.28, '600 46px Inter, sans-serif', LC(attrQ(a, a.labels[best])));
       tag.position.set((x0 + x1) / 2, TOP + 1.2 * it.probs[best] + 0.4, z);
       p.labels.add(tag);
     }));
@@ -687,7 +676,7 @@ const BUILD = {
         const x0 = WL.gx[inst.span[0]], x1 = WL.gx[inst.span[1]], kept = inst.prob >= g.threshold;
         (p.anch.inst[gi] ??= [])[k] = addTile(p, (x0 + x1) / 2, z, Math.max(0.25, x1 - x0 - 0.2), 0.32, 0.03 + 1.3 * inst.prob, kept ? LC(q) : mix(LC(q), "#FFFFFF", 0.6), { type: "inst", gi, k });
         if (!kept) return;
-        const tag = sprite(`${g.name} · ${f2(inst.prob)}`, 0.28, '600 46px "IBM Plex Sans", sans-serif', LC(q));
+        const tag = sprite(`${g.name} · ${f2(inst.prob)}`, 0.28, '600 46px Inter, sans-serif', LC(q));
         tag.position.set((x0 + x1) / 2, TOP + 1.3 * inst.prob + 0.4, z);
         p.labels.add(tag);
       });
@@ -704,7 +693,7 @@ const BUILD = {
         if (!ja.length) return;
         const ax = mid(spanEdges(ja)), ac = LC(fieldQ(g, anchor.name));
         ja.forEach((j) => paint(p, j, ac, 0.35));
-        const tag = sprite(`${g.name} #${lane}`, 0.3, '600 46px "IBM Plex Sans", sans-serif', ac);
+        const tag = sprite(`${g.name} #${lane}`, 0.3, '600 46px Inter, sans-serif', ac);
         tag.position.set(ax, TOP + 0.95, 0.9);
         p.labels.add(tag);
         g.fields.forEach((f) => {
@@ -715,7 +704,7 @@ const BUILD = {
           const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, 0.035, 8, false), mat(color));
           tube.castShadow = true;
           p.extra.add(tube);
-          const t = sprite(`${f.name} · ${f2(v.confidence)}`, 0.26, '600 46px "IBM Plex Sans", sans-serif', color);
+          const t = sprite(`${f.name} · ${f2(v.confidence)}`, 0.26, '600 46px Inter, sans-serif', color);
           t.position.set(x, TOP + 0.95, 0.9);
           p.labels.add(t);
         });
@@ -733,7 +722,7 @@ const BUILD = {
     markEntities(p, D.entities);
     D.relations.filter((r) => r.kept).forEach((r) => relationArc(p, r, "kept"));
     const texts = D.classifications.map((c) => `${c.task}: ${c.chosen.map((j) => c.labels[j]).join(", ")}`), L = row(texts, (t) => 0.19 * t.length, 1);
-    texts.forEach((t, k) => { const sp = sprite(t, 0.38, '600 50px "IBM Plex Sans", sans-serif', C.cls); sp.position.set(L.xs[k], TOP + 0.45, 0.2 - 0.75 * Math.max(1, types.length)); p.labels.add(sp); });
+    texts.forEach((t, k) => { const sp = sprite(t, 0.38, '600 50px Inter, sans-serif', C.cls); sp.position.set(L.xs[k], TOP + 0.45, 0.2 - 0.75 * Math.max(1, types.length)); p.labels.add(sp); });
     return p;
   },
 };
@@ -753,7 +742,7 @@ function markEntities(p, ents) {
     const js = wordsIn(e.start, e.end);
     if (!js.length) return;
     js.forEach((j) => { paint(p, j, LC(e.label), 0.5); p.anch.word[j].userData.ent = e; });
-    const tag = sprite(`${D.input.labels[e.label]} · ${f2(e.score)}`, 0.34, '600 46px "IBM Plex Sans", sans-serif', LC(e.label));
+    const tag = sprite(`${D.input.labels[e.label]} · ${f2(e.score)}`, 0.34, '600 46px Inter, sans-serif', LC(e.label));
     const n = (stacked[`${e.start}-${e.end}`] = (stacked[`${e.start}-${e.end}`] ?? -1) + 1);
     tag.position.set(mid(spanEdges(js)), TOP + 1.05 + 0.42 * n, p.anch.word[js[0]].position.z);
     p.labels.add(tag);
@@ -777,7 +766,7 @@ function relationArc(p, r, mode) {
     const tip = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.26, 12), mat(color));
     tip.rotation.x = Math.PI; tip.position.set(x1, TOP + 0.14, z);
     p.extra.add(tip);
-    const m = curve.getPoint(0.5), tag = sprite(`${r.type} · ${f2(r.prob)}`, 0.3, '600 46px "IBM Plex Sans", sans-serif', color);
+    const m = curve.getPoint(0.5), tag = sprite(`${r.type} · ${f2(r.prob)}`, 0.3, '600 46px Inter, sans-serif', color);
     tag.position.set(m.x, m.y + 0.3, z);
     p.labels.add(tag);
   }
@@ -800,7 +789,7 @@ function choicePlate(st, idx, y, height, color, tagOf) {
       p.anch.choice[ci] = addTile(p, L.xs[j], z, L.ws[j], 0.6, h, color(c, j), { type: "clsv", ci });
       flatText(p.labels, l, L.xs[j], z + 0.65, 0.3, L.ws[j], C.cls);
       const t = tagOf(c, j);
-      if (t) { const sp = sprite(t, 0.3, '600 46px "IBM Plex Sans", sans-serif', C.cls); sp.position.set(L.xs[j], TOP + h + 0.35, z); p.labels.add(sp); }
+      if (t) { const sp = sprite(t, 0.3, '600 46px Inter, sans-serif', C.cls); sp.position.set(L.xs[j], TOP + h + 0.35, z); p.labels.add(sp); }
     });
     flatText(p.labels, `${c.task} · classification`, 0, z - 0.7, 0.24, null, C.muted);
   });
@@ -1060,7 +1049,7 @@ function buildMap() {
     m.castShadow = true;
     m.userData = { kind: "tile", map: true, info: { type: "tok", k } };
     const name = t.kind === "marker" && t.label != null ? `${t.piece} ${D.input.labels[t.label]}` : t.kind === "marker" && t.ci != null ? `[L] ${D.choices[t.ci].label}` : t.kind === "text" && t.first ? D.words[t.word].text : t.kind === "marker" ? t.piece : null;
-    if (name) { m.userData.tag = sprite(name, t.kind === "marker" ? 0.32 : 0.27, `${t.kind === "marker" ? 600 : 500} 46px "IBM Plex Sans", sans-serif`, t.label != null ? LC(t.label) : t.ci != null ? C.cls : C.ink); mapG.add(m.userData.tag); }
+    if (name) { m.userData.tag = sprite(name, t.kind === "marker" ? 0.32 : 0.27, `${t.kind === "marker" ? 600 : 500} 46px Inter, sans-serif`, t.label != null ? LC(t.label) : t.ci != null ? C.cls : C.ink); mapG.add(m.userData.tag); }
     mapG.add(m); mapPts.push(m);
     const pts = D.layers.map((L) => new THREE.Vector3(...L.pos[k]).multiplyScalar(MAP_SCALE));
     const trail = new THREE.Line(new THREE.BufferGeometry().setFromPoints(new THREE.CatmullRomCurve3(pts).getPoints(80)), new THREE.LineBasicMaterial({ color: tokColor(t), transparent: true, opacity: t.kind === "schema" ? 0.12 : 0.3 }));
@@ -1344,7 +1333,7 @@ const CONTENT = {
       const mk = D.tokens.flatMap((t, k) => (t.kind === "marker" && (t.label != null || t.ci != null) ? [k] : []));
       const same = [...new Set(mk.map((k) => D.tokens[k].piece))].filter((m) => { const ks = mk.filter((k) => D.tokens[k].piece === m); return ks.length > 1 && ks.every((k) => L0.strip[k].join() === L0.strip[ks[0]].join()); });
       const show = [...new Set([f, ...D.qmarkers, ...D.words.map((w) => w.token)])].slice(0, 14);
-      return `<p>Embedding of ${pc(t)} (the first 32 of ${INFO.hidden} numbers; orange = positive, blue = negative):</p>${strip(L0.strip[f])}
+      return `<p>Embedding of ${pc(t)} (the first 32 of ${INFO.hidden} numbers; terracotta = positive, slate = negative):</p>${strip(L0.strip[f])}
         ${same.length ? `<div class="note key">All ${same.map((m) => `<code>${m}</code>`).join(" and all ")} markers start with <b>exactly the same embedding</b>: they do not know yet which query they belong to. They find out by looking around in the next layers.</div>` : ""}
         <h3>More embeddings</h3><div class="strips">${show.map((k) => `<span>${pc(D.tokens[k])}${D.tokens[k].label != null ? " " + labChip(D.tokens[k].label) : ""}</span>${strip(L0.strip[k])}`).join("")}</div>
         <p style="margin-top:10px;color:var(--muted);font-size:13px">Click any piece in the 3D view to see its embedding.</p>`;
@@ -1355,7 +1344,7 @@ const CONTENT = {
   },
   layer: {
     what: (st) => `<p>Each layer does two things:</p>
-      <ol><li><b>Attention.</b> Each piece asks the others “who helps me understand myself?” and mixes in their information according to the answer. The orange lines in the 3D view show what the selected piece looks at.</li>
+      <ol><li><b>Attention.</b> Each piece asks the others “who helps me understand myself?” and mixes in their information according to the answer. The terracotta lines in the 3D view show what the selected piece looks at.</li>
       <li><b>Processing</b> (<i>feed-forward</i> network). Each piece works on its own with what it has gathered.</li></ol>
       <p>This repeats ${INFO.layers} times. Early layers capture form and neighbours; later layers capture meaning and role in the sentence.</p>
       <div class="note key">The schema travels together with the text. That is why the marker of ${labChip(S.label)} can look straight at the words of your sentence, and its focus gets sharper layer by layer.</div>
@@ -1418,7 +1407,7 @@ const CONTENT = {
   marks: {
     what: () => `<p>Now the question comes in. The query vector is compared with every gap and every word. Out come three scores from 0 to 1:</p>
       <ul><li><b style="color:var(--terra)">Starts</b>: does an entity of this type start here?</li><li><b style="color:var(--slate)">Ends</b>: does it end here?</li><li><b style="color:var(--olive)">Inside</b>: is this word part of one?</li></ul>
-      <p>In the 3D view: orange bars = starts, blue bars = ends, word height = inside. Switch the query above to see how they change.</p>`,
+      <p>In the 3D view: terracotta bars = starts, slate bars = ends, word height = inside. Switch the query above to see how they change.</p>`,
     mine: () => {
       const q = sq(), B = D.boundary, s = argmax(B.start[q]), e = argmax(B.end[q]);
       const cell = (v, c) => `<td style="background:${ramp(v, c)}">${v >= 0.5 ? f2(v) : ""}</td>`;
@@ -1596,7 +1585,7 @@ function renderPanel() {
   // span plates offer span queries, classification plates offer choices, the trunk offers both
   const fk = !D || S.view === "map" || S.overview ? null : STEPS[S.step].key;
   const chip = (q, name) => `<button type="button" class="lab ${q === S.label ? "on" : ""}" style="--c:${qColor(q)}" data-q="${q}">${esc(name)}</button>`;
-  $("#follow").innerHTML = D ? `<span>Following</span>${D.groups.filter((g) => (g.q.length && !CLSLIKE.has(fk)) || (g.c.length && !SPANLIKE.has(fk)))
+  $("#follow").innerHTML = D ? `<span>Following:</span>${D.groups.filter((g) => (g.q.length && !CLSLIKE.has(fk)) || (g.c.length && !SPANLIKE.has(fk)))
     .map((g) => `<span class="fg"><small>${esc(groupTitle(g))}</small>${g.q.map((q) => chip(q, D.queries[q].short)).join("")}${g.c.map((ci) => chip(D.Q + ci, D.choices[ci].label)).join("")}</span>`).join("")}` : "";
   if (!D) return;
   const key = S.view === "map" ? "map" : S.overview ? "overview" : STEPS[S.step].key;
@@ -1693,6 +1682,7 @@ $("#thr").addEventListener("input", (e) => ($("#thrOut").textContent = f2(e.targ
 function renderTasks() {
   $("#taskbar").innerHTML = Object.entries(TASKS).map(([k, t]) => `<button type="button" data-task="${k}" class="${k === S.task ? "on" : ""}" aria-pressed="${k === S.task}">${t.title}</button>`).join("");
   document.querySelectorAll(".tasks .field").forEach((f) => (f.hidden = !TASKS[S.task].fields.includes(f.dataset.f)));
+  $("#form").classList.toggle("wide", TASKS[S.task].fields.length > 2);
   $("#examples").querySelectorAll("button").forEach((b) => b.remove());
   EXAMPLES[S.task].forEach((x) => {
     const b = document.createElement("button");
@@ -1733,7 +1723,7 @@ addEventListener("keydown", (e) => {
 // ---------- start ----------
 (async () => {
   renderRail();
-  await Promise.all(['500 52px "IBM Plex Sans"', '600 46px "IBM Plex Sans"', '700 54px Archivo', '500 44px "IBM Plex Mono"'].map((f) => document.fonts.load(f))).catch(() => {});
+  await Promise.all(['500 52px Inter', '600 46px Inter', '600 58px "Playfair Display"', '500 44px "IBM Plex Mono"'].map((f) => document.fonts.load(f))).catch(() => {});
   try {
     INFO = await (await fetch("/api/info")).json();
   } catch {
