@@ -203,6 +203,12 @@ body.landing { overflow: hidden; }
 .land-in > :nth-child(5) { animation-delay: .28s; } .land-in > :nth-child(6) { animation-delay: .35s; } .land-in > :nth-child(7) { animation-delay: .42s; }
 @media (prefers-reduced-motion: reduce) { .land-in > * { animation: none; } }
 
+/* static demo: answers were precomputed for the examples, so the fields are read-only */
+.static-note { display: none; order: 6; flex-basis: 100%; margin: 0; font-size: 12.5px; color: var(--muted); }
+.static-note a { color: var(--ink); text-decoration: underline dotted var(--faint); text-underline-offset: 3px; }
+body.static .static-note { display: block; }
+body.static .composer input[type=text] { background: var(--wash); color: var(--muted); }
+
 /* footer: credits */
 .foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; padding: 8px 24px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
 .foot a { color: var(--ink); text-decoration: underline dotted var(--faint); text-underline-offset: 3px; }
@@ -263,6 +269,7 @@ body.landing { overflow: hidden; }
     <div class="field" data-f="str"><label for="fStr">Structure</label><input id="fStr" type="text" autocomplete="off" spellcheck="false" placeholder="launch: product*, company, place" title="name: fields. * marks the anchor field (default: the first). Separate structures with ;"></div>
   </div>
   <div class="sub" id="examples"><span>Examples:</span></div>
+  <p class="static-note">Online demo: the examples were run through the real model ahead of time. To analyze your own sentences, <a href="https://github.com/polodealvarado/gliner2-visualizer#start" target="_blank" rel="noopener">run it on your computer</a>.</p>
 </form>
 <main>
   <nav id="rail" aria-label="Model stages"></nav>
@@ -355,7 +362,7 @@ const diverge = (v) => (v >= 0 ? mix(C.paper, C.terra, v) : mix(C.paper, C.neg, 
 
 // ---------- state ----------
 const S = { task: "entities", about: false, step: 0, overview: true, label: 0, focusTok: 0, view: "flow", tab: "what", playing: false, mapLayer: 0, mapPlaying: false };
-let INFO = null, D = null, STEPS = [], plates = [];
+let INFO = null, D = null, STEPS = [], plates = [], STATIC = false;
 
 const EXAMPLES = {
   entities: [
@@ -1731,6 +1738,12 @@ function parseSchema() {
   return { entities, attributes, classifications, relations: list(val("rel")), structures };
 }
 const fill = (x) => { $("#text").value = x.text; Object.entries(FIELDS).forEach(([k, sel]) => ($(sel).value = x[k] ?? "")); };
+// the static demo stores each precomputed answer under a hash of the exact request body
+async function sha16(text) {
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)));
+  return [...h.slice(0, 8)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+async function getJSON(url) { const r = await fetch(url); if (!r.ok) throw new Error(r.statusText); return r.json(); }
 function toast(msg) { const t = $("#toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => (t.style.display = "none"), 5000); }
 async function analyze() {
   let schema;
@@ -1740,7 +1753,9 @@ async function analyze() {
   const body = { text: $("#text").value, threshold: +$("#thr").value, ...schema };
   $("#go").disabled = true; $("#busy").classList.add("on"); stopPlay();
   try {
-    const r = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const payload = JSON.stringify(body);
+    const r = STATIC ? await fetch(`static/${await sha16(payload)}.json`) : await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: payload });
+    if (STATIC && !r.ok) throw new Error("This online demo only has the examples. To analyze your own sentences, run it on your computer.");
     const j = await r.json();
     if (!r.ok) throw new Error(j.error || r.statusText);
     const first = !D;
@@ -1754,7 +1769,7 @@ async function analyze() {
     renderRail(); renderPanel();
   } catch (e) {
     toast(e instanceof TypeError ? "Cannot reach the server. Start it with: uv run server.py" : e.message);
-  } finally { $("#go").disabled = false; $("#busy").classList.remove("on"); }
+  } finally { $("#go").disabled = STATIC; $("#busy").classList.remove("on"); }
 }
 
 // ---------- wiring ----------
@@ -1827,17 +1842,25 @@ addEventListener("keydown", (e) => {
   renderRail(); showLanding();
   await Promise.all(['500 52px Inter', '600 46px Inter', '600 58px "Playfair Display"', '500 44px "IBM Plex Mono"'].map((f) => document.fonts.load(f))).catch(() => {});
   try {
-    INFO = await (await fetch("/api/info")).json();
+    INFO = await getJSON("/api/info");
   } catch {
+    try { INFO = await getJSON("static/info.json"); STATIC = true; } catch { INFO = null; }
+  }
+  if (!INFO) {
     $("#landMeta").textContent = "Server not available. Start it from this folder with: uv run server.py";
     $("#ptitle").textContent = "Server not available";
     $("#tabbody").innerHTML = `<p>Start the server from this folder:</p><p><code>uv run server.py</code></p><p>and open <code>http://localhost:8765</code>.</p>`;
     return;
   }
+  if (STATIC) {
+    document.body.classList.add("static");
+    document.querySelectorAll(".composer input[type=text]").forEach((i) => (i.readOnly = true));
+    $("#thr").disabled = $("#go").disabled = true;
+  }
   GROUPS = groupsFor(null); buildSteps(INFO.layers);
   $("#mapLayer").max = INFO.layers;
   $("#modelLink").href = `https://huggingface.co/${INFO.name}`;
-  $("#landMeta").textContent = `${INFO.name} · ${Math.round(INFO.params.total / 1e6)}M parameters · ${INFO.layers} Transformer layers · running on this server`;
+  $("#landMeta").textContent = `${INFO.name} · ${Math.round(INFO.params.total / 1e6)}M parameters · ${INFO.layers} Transformer layers · ${STATIC ? "answers precomputed with the real model" : "running on this server"}`;
   renderTasks(); renderRail();
   fill(EXAMPLES[S.task][0]);
   analyze();

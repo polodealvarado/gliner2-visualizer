@@ -3,10 +3,9 @@ title: Inside GLiNER2.5
 emoji: 🔎
 colorFrom: blue
 colorTo: indigo
-sdk: docker
-app_port: 7860
+sdk: static
+app_file: index.html
 pinned: false
-license: apache-2.0
 short_description: Watch GLiNER2.5 extract information, stage by stage
 models:
   - fastino/gliner2.5-multi-v1
@@ -84,7 +83,20 @@ docker build -t inside-gliner .        # downloads the model and runs --check
 docker run -p 7860:7860 inside-gliner   # then open http://localhost:7860
 ```
 
-The same `Dockerfile` runs the Hugging Face Space.
+The same `Dockerfile` can run a live Hugging Face Docker Space (Docker Spaces need a Hugging Face PRO account).
+
+## Online demo (static Space)
+
+The public demo is a free static Space: no server, so the examples are precomputed with the real model.
+
+```bash
+uv run server.py      # in one terminal
+uv run bake.py        # in another: runs every example through the page, writes static/
+```
+
+`bake.py` stores each answer under the SHA-256 of the exact request the page sends.
+Without a server, `index.html` loads `static/<hash>.json`, and the form fields become read-only.
+Upload `index.html`, `README.md` and `static/` to the Space.
 
 ## Files
 
