@@ -3,6 +3,20 @@
 An interactive, didactic 3D view of GLiNER2.5 for non-technical readers.
 You type a sentence and a schema: entity types, attributes, relations, a structure and classification labels. The real model answers all of it in one pass, and the page draws what each stage produces, from the pieces of the text to the final answers.
 
+## What is GLiNER2.5?
+
+GLiNER2.5 is a family of small, open models from [Fastino AI](https://fastino.ai) that turn text into structured data.
+You describe what you want in a schema and the model answers all of it in one pass, even for types it never saw during training.
+
+- **Entities**: stretches of text of any type you name (people, companies, dates, medications…).
+- **Classification**: one or several labels for the whole text (topic, intent, tone).
+- **Relations**: typed, directed links between two stretches (Tim Cook → works_for → Apple).
+- **Structures**: records with fields, keeping which value belongs to which record.
+- **Attributes**: a label from a group for each entity (the mood of each person).
+
+Typical uses: extracting data from contracts, invoices or medical records; finding personal data before sharing documents; routing support tickets; building knowledge graphs; filling databases from emails or forms.
+The checkpoints have 74M to 287M parameters, run locally on CPU or GPU, return exact character offsets and are Apache-2.0.
+
 ## Start
 
 ```bash

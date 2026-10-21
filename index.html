@@ -166,6 +166,23 @@ dl.legend dd { margin: 0; color: var(--muted); }
 .seq small { font: 500 10.5px var(--sans); color: var(--faint); text-transform: uppercase; letter-spacing: .05em; margin-right: 6px; }
 .pc.desc { background: #EAF0F6; color: var(--muted); }
 
+/* about: what GLiNER2.5 is and what it is for */
+.linkish { background: none; border: 0; padding: 0; color: var(--terra); text-decoration: underline; text-underline-offset: 3px; }
+#about { width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 48px); padding: 0; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); color: var(--ink); box-shadow: 0 24px 60px rgba(30, 50, 80, .18); }
+#about::backdrop { background: rgba(31, 45, 61, .3); }
+.about-in { position: relative; padding: 26px 30px 22px; }
+#about h2 { font: 600 26px/1.15 var(--serif); margin: 0 0 8px; padding-right: 40px; }
+#about h3 { font: 600 16px var(--serif); margin: 18px 0 6px; }
+#about .lede { margin: 0 0 4px; }
+#about ul { margin: 0; padding-left: 18px; font-size: 14px; }
+#about li { margin-bottom: 5px; }
+#about li b { font-weight: 600; }
+#about form { position: absolute; top: 14px; right: 14px; margin: 0; }
+.about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; }
+.about-links { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 18px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.about-links a { color: var(--ink); text-decoration: underline dotted var(--faint); text-underline-offset: 3px; }
+.about-links a:hover { color: var(--terra); }
+
 /* footer: credits */
 .foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; padding: 8px 24px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
 .foot a { color: var(--ink); text-decoration: underline dotted var(--faint); text-underline-offset: 3px; }
@@ -190,6 +207,8 @@ dl.legend dd { margin: 0; color: var(--muted); }
   .composer > *, .tasks > .field { flex-basis: 100%; }
   .composer.wide .tasks { grid-template-columns: 1fr; order: 1; } /* on phones, fill the fields first, then Analyze */
   .foot .aside { margin-left: 0; }
+  .about-grid { grid-template-columns: 1fr; }
+  .about-in { padding: 22px 18px 18px; }
   #stepLabel, #mapCtl input[type=range] { display: none; }
   .hud.tr { top: 60px; left: 14px; right: auto; }
 }
@@ -206,6 +225,7 @@ dl.legend dd { margin: 0; color: var(--muted); }
   <h1 class="brand">Inside GLiNER2.5</h1>
   <nav class="seg taskbar" id="taskbar" aria-label="Task"></nav>
   <span id="status"></span>
+  <button class="ghost" id="aboutBtn" type="button">What is GLiNER2.5?</button>
 </header>
 <form id="form" class="composer">
   <div class="field"><label for="text">Your sentence</label><input id="text" type="text" autocomplete="off" spellcheck="false"></div>
@@ -269,6 +289,52 @@ dl.legend dd { margin: 0; color: var(--muted); }
   <span>Made by <a href="https://huggingface.co/polodealvarado" target="_blank" rel="noopener">@polodealvarado</a></span>
   <span class="aside">Independent project, not affiliated with Fastino.</span>
 </footer>
+<dialog id="about" aria-labelledby="aboutTitle">
+  <div class="about-in">
+    <form method="dialog"><button class="icon" aria-label="Close"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></form>
+    <h2 id="aboutTitle">What is GLiNER2.5?</h2>
+    <p class="lede">GLiNER2.5 is a family of small, open models from Fastino AI that turn text into structured data. You describe what you want in a schema (entity types, labels, relations, fields) and the model answers all of it in one pass, even for types it never saw during training.</p>
+    <div class="about-grid">
+      <section>
+        <h3>What it can do</h3>
+        <ul>
+          <li><b>Entities</b>: find stretches of text of any type you name, such as people, companies, dates or medications.</li>
+          <li><b>Classification</b>: give the whole text one label or several, such as topic, intent or tone.</li>
+          <li><b>Relations</b>: link two stretches with a typed, directed relation, such as Tim Cook → works_for → Apple.</li>
+          <li><b>Structures</b>: fill records with fields and keep which value belongs to which record.</li>
+          <li><b>Attributes</b>: give each entity a label from a group, such as the mood of each person.</li>
+        </ul>
+      </section>
+      <section>
+        <h3>What people use it for</h3>
+        <ul>
+          <li>Pull names, dates and amounts out of contracts, invoices or medical records.</li>
+          <li>Find personal data in documents before they are shared.</li>
+          <li>Route support tickets by intent and tone.</li>
+          <li>Turn news into a graph of who works where.</li>
+          <li>Fill a database from emails or free-text forms.</li>
+          <li>Measure the opinion about each product or person, not only about the whole text.</li>
+        </ul>
+      </section>
+    </div>
+    <h3>Why it stands out</h3>
+    <ul>
+      <li><b>Small</b>: 74M to 287M parameters. It runs locally, on CPU or GPU.</li>
+      <li><b>No fixed label list</b>: you write the labels when you run it (zero-shot).</li>
+      <li><b>One pass</b> through the encoder for every task in the schema.</li>
+      <li><b>Exact positions</b>: every answer comes with its character offsets in the text.</li>
+      <li><b>Multilingual</b>: gliner2.5-multi-v1 reads many languages; the small and base checkpoints are English.</li>
+      <li><b>Open</b>: Apache-2.0, and you can fine-tune it on your own data.</li>
+    </ul>
+    <p class="about-links">
+      <a href="https://huggingface.co/fastino/gliner2.5-multi-v1" target="_blank" rel="noopener">Model card</a>
+      <a href="https://github.com/fastino-ai/GLiNER2" target="_blank" rel="noopener">GLiNER2 on GitHub</a>
+      <a href="https://arxiv.org/abs/2507.18546" target="_blank" rel="noopener">Paper · arXiv 2507.18546</a>
+      <a href="https://fastino.ai" target="_blank" rel="noopener">Fastino AI</a>
+      <span>This page runs <code id="aboutModel">fastino/gliner2.5-multi-v1</code>.</span>
+    </p>
+  </div>
+</dialog>
 <div id="tip"></div>
 <div id="toast" role="alert"></div>
 
@@ -1269,6 +1335,7 @@ function highlighted(ents) {
 const CONTENT = {
   overview: {
     what: () => `<p>This is <b>GLiNER2.5</b> from the inside. ${TASKS[S.task].intro}</p>
+      <p style="font-size:14px;color:var(--muted)">New to GLiNER2.5? <button type="button" class="linkish" data-about>Read what it is and what it is for</button>.</p>
       <p>Each plate of the tower is a stage. Your sentence and your schema enter at the bottom and climb plate by plate. In between there are <b>${INFO.layers} Transformer layers</b>, where each piece of the text looks at the others to understand its context.</p>
       ${S.task === "all" ? "" : `<div class="note">The tabs above the sentence switch task. The bottom of the tower is the same for every task; only the plates on top change.</div>`}
       <div class="note key">Press ▶ (below) to follow your sentence step by step, or pick a stage in the left column. Hover over any piece to see what it is.</div>
@@ -1691,9 +1758,12 @@ $("#vFlow").onclick = () => setView("flow");
 $("#vMap").onclick = () => setView("map");
 $("#mapLayer").oninput = (e) => { S.mapLayer = +e.target.value; S.mapPlaying = false; mapRefresh(); };
 $("#mapPlay").onclick = mapPlay;
+$("#aboutBtn").onclick = () => $("#about").showModal();
+document.addEventListener("click", (e) => { if (e.target.closest("[data-about]")) $("#about").showModal(); });
+$("#about").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); }); // click on the backdrop
 $("#trails").onchange = mapRefresh;
 addEventListener("keydown", (e) => {
-  if (!D || e.target.closest("input, textarea")) return;
+  if (!D || e.target.closest("input, textarea") || $("#about").open) return;
   if (e.key === "ArrowRight") { e.preventDefault(); $("#next").click(); }
   if (e.key === "ArrowLeft") { e.preventDefault(); $("#prev").click(); }
   if (e.key === " ") { e.preventDefault(); S.view === "map" ? mapPlay() : play(); }
@@ -1713,6 +1783,7 @@ addEventListener("keydown", (e) => {
   GROUPS = groupsFor(null); buildSteps(INFO.layers);
   $("#mapLayer").max = INFO.layers;
   $("#modelLink").href = `https://huggingface.co/${INFO.name}`;
+  $("#aboutModel").textContent = INFO.name;
   renderTasks(); renderRail();
   fill(EXAMPLES[S.task][0]);
   analyze();
