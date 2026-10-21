@@ -21,6 +21,7 @@ Then open http://localhost:8765. The page (index.html) draws the result in 3D.
 
 import argparse
 import gzip
+import importlib.metadata
 import json
 import math
 import threading
@@ -30,6 +31,7 @@ from pathlib import Path
 
 import torch
 from gliner2 import AttributeGroup, AutoExtractor
+from huggingface_hub import try_to_load_from_cache
 
 HERE = Path(__file__).parent
 MAX_WORDS, MAX_QUERIES, MAX_CLS, MAX_CHOICES, STRIP = 60, 12, 3, 8, 32
@@ -110,11 +112,25 @@ def params(module):
     return sum(p.numel() for p in module.parameters()) if module is not None else 0
 
 
+def revision(name):
+    """Commit of the cached checkpoint the model was loaded from (the snapshot folder of its config), or None for a local folder."""
+    try:
+        path = try_to_load_from_cache(name, "config.json")  # snapshot_download(local_files_only) fails on partial snapshots
+    except Exception:
+        return None
+    return Path(path).parent.name if isinstance(path, str) else None
+
+
 def model_info(model, name):
     enc, s = model.encoder, model.boundary_settings
     head = model.boundary_head
+    weight = next(model.parameters())
     return {
         "name": name,
+        "revision": revision(name),
+        "versions": {pkg: importlib.metadata.version(pkg) for pkg in ("gliner2", "torch", "transformers")},
+        "device": str(weight.device),
+        "dtype": str(weight.dtype).replace("torch.", ""),
         "encoder": enc.config.model_type,
         "layers": enc.config.num_hidden_layers,
         "hidden": enc.config.hidden_size,
@@ -174,7 +190,8 @@ def build_schema(model, spec):
     for name, v in spec["structures"].items():
         b = s.structure(name, mode="natural", anchor=v["anchor"])
         for f in v["fields"]:
-            b.field(f, dtype="str", cardinality="required_one" if f == v["anchor"] else None)
+            # dtype alone does not reach the record spec, so the cardinality is explicit: one value or none
+            b.field(f, dtype="str", cardinality="required_one" if f == v["anchor"] else "optional_one")
     s.build()
     return s
 

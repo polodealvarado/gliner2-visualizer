@@ -13,6 +13,8 @@ request the page sends (first 16 hex digits). Without a server, index.html loads
 
 import hashlib
 import json
+import subprocess
+import time
 import urllib.request
 from pathlib import Path
 
@@ -26,7 +28,11 @@ def main():
     OUT.mkdir(exist_ok=True)
     for old in OUT.glob("*.json"):
         old.unlink()
-    (OUT / "info.json").write_bytes(urllib.request.urlopen(URL + "/api/info").read())
+    # provenance: which source commit baked these answers, and when (the server adds checkpoint revision and versions)
+    info = json.loads(urllib.request.urlopen(URL + "/api/info").read())
+    info["source_commit"] = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=OUT.parent).stdout.strip()
+    info["baked_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    (OUT / "info.json").write_text(json.dumps(info, ensure_ascii=False))
     saved = {}
 
     def keep(resp):

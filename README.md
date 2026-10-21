@@ -31,7 +31,7 @@ Each stage explains itself three times: in plain words, with the real values for
 
 GLiNER2.5 is a family of small, open models (74M to 287M parameters) that turn text into structured data.
 You describe what you want in a schema, and the model answers all of it **in one pass** of its encoder, even for types it never saw during training.
-It runs locally on CPU or GPU and returns the exact character offsets of every answer.
+It runs locally on CPU or GPU and returns the exact character offsets of every stretch it extracts.
 
 | Task | What it finds | Example |
 |---|---|---|
@@ -108,11 +108,13 @@ One `model.extract()` call answers the whole schema, and the hooks keep what eac
 | Gap vectors | `boundary_head.boundary_encoder` |
 | Start, end and inside scores | `boundary_head.boundary_query_head` |
 | Candidate pool and its scores | `boundary_head.shared_pool_builder`, `boundary_head.shared_pool_scorer` |
-| “Is there any?” and expected counts | `boundary_head.null_projection`, `boundary_head.count_head` |
+| “Is there any?” scores of the entity types | `boundary_head.null_projection` |
 | Classification scores | `classifier` |
 | Relation pairs and their scores | `relation_pair_generator`, `relation_scorer` |
 | Attribute scores at the decided entities | `boundary_head.score_explicit_spans` |
 | Record instances and field assignment | `record_decoder.forward_group` |
+
+The server also returns the expected number of mentions per query (`boundary_head.count_head`); the page does not draw it yet.
 
 **The page.** `index.html` is a single file: Three.js from a CDN and no build step.
 It turns the JSON into plates, tiles, arcs and particles, and writes the three panel tabs from the same numbers.

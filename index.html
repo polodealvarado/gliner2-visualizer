@@ -772,14 +772,36 @@ const BUILD = {
     (c, j) => (c.chosen.includes(j) ? C.cls : mix(C.cls, "#FFFFFF", 0.62)), (c, j) => (c.chosen.includes(j) ? `${c.task}: ${c.labels[j]} · ${f2(c.probs[j])}` : null)),
   result: (st, i, y) => {
     const types = D.input.schema.relations, nc = D.classifications.length;
-    const p = wordPlate(st, i, y, { wz: 0.9, wh: 0.06, back: lanes(types.length) + (nc ? 1 : 0) });
-    markEntities(p, D.entities);
+    const nr = D.records.reduce((a, g) => a + g.result.length, 0);
+    const p = wordPlate(st, i, y, { wz: 0.9, wh: 0.06, back: lanes(types.length + nr) + (nc ? 1 : 0) });
+    markEntities(p, D.entities, true);
     D.relations.filter((r) => r.kept).forEach((r) => relationArc(p, r, "kept"));
+    recordArcs(p, types.length);
     const texts = D.classifications.map((c) => `${c.task}: ${c.chosen.map((j) => c.labels[j]).join(", ")}`), L = row(texts, (t) => 0.19 * t.length, 1);
     texts.forEach((t, k) => { const sp = sprite(t, 0.38, '600 50px Inter, sans-serif', C.cls); sp.position.set(L.xs[k], TOP + 0.45, 0.2 - 0.75 * Math.max(1, types.length)); p.labels.add(sp); });
     return p;
   },
 };
+// one lane per record after the relation lanes: an arc from the anchor to each value, with the field name
+function recordArcs(p, lane) {
+  D.records.forEach((g) => {
+    const anchor = g.fields.find((f) => f.anchor);
+    g.result.forEach((rec) => {
+      const z = 0.2 - 0.75 * lane++, a = one(rec[anchor.name]), ja = a ? wordsIn(a.start, a.end) : [];
+      if (!ja.length) return;
+      const ax = mid(spanEdges(ja));
+      g.fields.forEach((f) => {
+        const v = one(rec[f.name]), js = v && !f.anchor ? wordsIn(v.start, v.end) : [];
+        if (!js.length) return;
+        const color = LC(fieldQ(g, f.name)), x = mid(spanEdges(js)), curve = arc(ax, x, z, 0.35 + 0.08 * Math.abs(x - ax));
+        p.extra.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 40, 0.03, 8, false), mat(color)));
+        const t = sprite(`${g.name} · ${f.name}`, 0.24, '600 46px Inter, sans-serif', color);
+        t.position.set(x, TOP + 0.55, z);
+        p.labels.add(t);
+      });
+    });
+  });
+}
 const wordsIn = (start, end) => D.words.flatMap((w, j) => (w.start >= start && w.end <= end ? [j] : []));
 const spanEdges = (js) => [WL.xs[js[0]] - WL.ws[js[0]] / 2, WL.xs[js.at(-1)] + WL.ws[js.at(-1)] / 2];
 const mid = ([a, b]) => (a + b) / 2;
@@ -790,13 +812,15 @@ const relQ = (type) => D.queries.findIndex((q) => q.kind === "relation" && q.tas
 const fieldQ = (g, name) => D.queries.findIndex((q) => q.kind === "structure" && q.task === g.name && q.role === name);
 const attrQ = (a, label) => D.queries.findIndex((q) => q.kind === "attribute" && q.group === a.group && q.short === label);
 function paint(p, j, color, h) { const m = p.anch.word[j]; m.material.color.set(color); m.userData.color = color; m.userData.th = h; }
-function markEntities(p, ents) {
+function markEntities(p, ents, withAttributes = false) {
   const stacked = {};
   ents.forEach((e) => {
     const js = wordsIn(e.start, e.end);
     if (!js.length) return;
     js.forEach((j) => { paint(p, j, LC(e.label), 0.5); p.anch.word[j].userData.ent = e; });
-    const tag = sprite(`${D.input.labels[e.label]} · ${f2(e.score)}`, 0.34, '600 46px Inter, sans-serif', LC(e.label));
+    const attrs = withAttributes ? D.attributes.flatMap((a) => a.items.filter((it) => it.start === e.start && it.end === e.end && it.label === e.label)
+      .map((it) => ` · ${a.group}: ${a.labels[argmax(it.probs)]}`)) : [];
+    const tag = sprite(`${D.input.labels[e.label]} · ${f2(e.score)}${attrs.join("")}`, 0.34, '600 46px Inter, sans-serif', LC(e.label));
     const n = (stacked[`${e.start}-${e.end}`] = (stacked[`${e.start}-${e.end}`] ?? -1) + 1);
     tag.position.set(mid(spanEdges(js)), TOP + 1.05 + 0.42 * n, p.anch.word[js[0]].position.z);
     p.labels.add(tag);
@@ -1345,7 +1369,7 @@ const CONTENT = {
       ${S.task === "all" ? "" : `<div class="note">The tabs above the sentence switch task. The bottom of the tower is the same for every task; only the plates on top change.</div>`}
       <div class="note key">Press ▶ (below) to follow your sentence step by step, or pick a stage in the left column. Hover over any piece to see what it is.</div>
       <p>The small balls that travel between plates are information passing from one stage to the next.</p>`,
-    mine: () => `<p>Result for your sentence:</p>${highlighted(D.entities)}${otherAnswers()}<p class="mono" style="margin-top:10px">${D.entities.length} entities · ${D.ms} ms of model time</p>`,
+    mine: () => `<p>Result for your sentence:</p>${highlighted(D.entities)}${otherAnswers()}<p class="mono" style="margin-top:10px">${D.entities.length} entities · ${D.ms} ms of model time${STATIC ? ", measured when the examples were baked" : ""}</p>`,
     tech: () => techModel(),
   },
   input: {
@@ -1369,7 +1393,7 @@ const CONTENT = {
   tokens: {
     what: () => `<p>The model does not read letters or words: it reads <b>pieces</b> (tokens). Its vocabulary has <b>${nf(INFO.vocab)} pieces</b> from many languages.</p>
       <p>Frequent words are a single piece. Rare words are split into known chunks. The symbol <code>▁</code> marks a piece that starts a new word.</p>
-      ${D.lower ? `<div class="note">Notice that capital letters disappear. This tokenizer lowercases everything before it cuts.</div>` : ""}
+      ${D.lower ? `<div class="note">Notice that capital letters disappear: GLiNER lowercases the text before the tokenizer cuts it. The answers still point to the original text.</div>` : ""}
       <div class="note">Analogy: like reading an unfamiliar word syllable by syllable. “Unbelievable” may not be in the vocabulary, but “un”, “believ” and “able” are.</div>`,
     mine: () => {
       const text = D.tokens.filter((t) => t.kind === "text").length;
@@ -1404,8 +1428,8 @@ const CONTENT = {
     what: (st) => `<p>Each layer does two things:</p>
       <ol><li><b>Attention.</b> Each piece asks the others “who helps me understand myself?” and mixes in their information according to the answer. The blue lines in the 3D view show what the selected piece looks at.</li>
       <li><b>Processing</b> (<i>feed-forward</i> network). Each piece works on its own with what it has gathered.</li></ol>
-      <p>This repeats ${INFO.layers} times. Early layers capture form and neighbours; later layers capture meaning and role in the sentence.</p>
-      <div class="note key">The schema travels together with the text. That is why the marker of ${labChip(S.label)} can look straight at the words of your sentence, and its focus gets sharper layer by layer.</div>
+      <p>This repeats ${INFO.layers} times, and the attention patterns change from layer to layer. There is no fixed rule for what each layer does, so look at what your sentence does.</p>
+      <div class="note key">The schema travels together with the text. That is why the marker of ${labChip(S.label)} can look straight at the words of your sentence, and where it looks changes from layer to layer.</div>
       <p style="color:var(--muted);font-size:13px">You are at layer ${st.layer} of ${INFO.layers}. The height of each piece shows how much the selected piece (in black) looks at it.</p>`,
     mine: (st) => {
       const f = S.focusTok, att = D.layers[st.layer].attn[f], top = topAttn(st.layer);
@@ -1442,7 +1466,7 @@ const CONTENT = {
         </tbody></table>`;
     },
     tech: () => `<dl class="tech"><dt>Pooling</dt><dd><code>token_pooling = "first"</code>: the model takes the vector of the first piece of each word.</dd>
-      <dt>Outputs</dt><dd>Text <code>[1, ${D.W}, ${INFO.hidden}]</code>, span queries <code>[1, ${D.Q}, ${INFO.hidden}]</code>${D.choices.length ? ` and classification choices <code>[${D.choices.length}, ${INFO.hidden}]</code>` : ""}.</dd>
+      <dt>Outputs</dt><dd>Text <code>[1, ${D.W}, ${INFO.hidden}]</code>, span queries <code>[1, ${D.Q}, ${INFO.hidden}]</code>${D.choices.length ? ` and classification choices <code>[1, ${D.choices.length}, ${INFO.hidden}]</code>` : ""}.</dd>
       <dt>Code</dt><dd class="file">gliner2/models/boundary/model.py · _encode_core</dd></dl>`,
   },
   gaps: {
@@ -1457,7 +1481,7 @@ const CONTENT = {
         ${e ? `<p style="margin-top:12px">For example, “${esc(e.text)}” is the stretch <b>from gap ${s} to gap ${en}</b>.</p>` : ""}
         <h3>Fingerprint of gap 0</h3><p style="font-size:13px;color:var(--muted)">32 of its ${INFO.boundary_dim} numbers (more compact than the ${INFO.hidden} before).</p>${strip(D.boundary.strip[0])}`;
     },
-    tech: () => `<dl class="tech"><dt>BoundaryEncoder</dt><dd>Left and right projections ${INFO.hidden} → ${INFO.boundary_dim}, concatenation → ${INFO.boundary_dim}, LayerNorm, ${INFO.boundary_attention_layers} attention blocks with a window of ${INFO.boundary_attention_window} gaps and 1 residual SwiGLU block.</dd>
+    tech: () => `<dl class="tech"><dt>BoundaryEncoder</dt><dd>Left and right projections ${INFO.hidden} → ${INFO.boundary_dim}, concatenation → ${INFO.boundary_dim}, LayerNorm, ${INFO.boundary_attention_layers} attention blocks in which each gap looks at the gaps up to ${INFO.boundary_attention_window} positions on either side, and 1 residual SwiGLU block.</dd>
       <dt>Shape</dt><dd><code>[1, ${D.W + 1}, ${INFO.boundary_dim}]</code>. The two ends use learned “start of text” and “end of text” vectors.</dd>
       <dt>Parameters</dt><dd>${nf(INFO.params.boundary_encoder)}: tiny next to the ${nf(INFO.params.encoder)} of the encoder.</dd>
       <dt>Code</dt><dd class="file">gliner2/models/boundary/encoding.py · BoundaryEncoder</dd></dl>`,
@@ -1507,30 +1531,36 @@ const CONTENT = {
         ${top.map((c) => `<tr><th>“${esc(c.text)}”</th>${c.probs.map((v, q) => `<td class="v ${v >= thr ? "hit" : ""}" style="background:${v >= thr ? LC(q) : ramp(v * 0.8, LC(q))}">${f2(v)}</td>`).join("")}</tr>`).join("")}
         </tbody></table></div><p style="font-size:13px;color:var(--muted)">Solid fill = passes the threshold ${f2(thr)}.</p>`;
     },
-    tech: () => `<dl class="tech"><dt>SharedPoolScorer</dt><dd>Candidate vector = start + end + length features (log, relative, 1/√) + prior score + content (mean and log-sum-exp of the stretch), with LayerNorm.</dd>
-      <dt>Score</dt><dd>Dot product with the query + an MLP modulated by the label (FiLM: γ, β) + start/end logits + mean “inside”. Probability = sigmoid.</dd>
-      <dt>Shape</dt><dd><code>[1, ${D.pool.kept}, ${D.Q}]</code> (candidates × queries). Parameters: ${nf(INFO.params.scorer)}.</dd>
+    tech: () => `<dl class="tech"><dt>SharedPoolScorer</dt><dd>Candidate vector = start + end + length features (log, relative, 1/√) + prior score + content (mean of the stretch's word vectors), with LayerNorm.</dd>
+      <dt>Score</dt><dd>Dot product with the query + an MLP modulated by the label (FiLM: γ, β) + start/end logits + the stretch's summed “inside” score ÷ √length. Probability = sigmoid(score ÷ pair temperature).</dd>
+      <dt>Shape</dt><dd><code>[1, ${INFO.pool_size}, ${D.Q}]</code> (candidate slots × queries). ${D.pool.kept} slots hold real candidates; the rest is padding, and the page shows only the real ones. Parameters: ${nf(INFO.params.scorer)}.</dd>
       <dt>Code</dt><dd class="file">gliner2/models/boundary/pool.py · SharedPoolScorer</dd></dl>`,
   },
   decide: {
     what: () => `<p>Three filters remain:</p>
-      <ol><li><b>Is there any?</b> A detector per query can say “there is none in this text” and drop the whole query.</li>
-      <li><b>Threshold.</b> Only candidates with a score ≥ ${f2(D.input.threshold)} pass. Move the threshold at the top and analyze again.</li>
-      <li><b>Overlaps.</b> Within one query, if two stretches overlap, the non-overlapping combination with the highest total score wins.</li></ol>
+      <ol><li><b>Is there any?</b> A detector per entity type can say “there is none in this text” and drop that type entirely.</li>
+      <li><b>Threshold.</b> Only candidates with a score ≥ ${f2(D.input.threshold)} pass.${STATIC ? "" : " Move the threshold at the top and analyze again."}</li>
+      <li><b>Overlaps.</b> Within one entity type, if two stretches overlap, the non-overlapping combination with the highest total score wins.</li></ol>
       <p>What is left is the answer, with the exact position of each entity in the original text.</p>`,
     mine: () => {
       const thr = D.input.threshold, abs = D.abstention_threshold;
-      const lost = [];
-      D.candidates.forEach((c) => c.probs.forEach((v, q) => { if (v >= thr && !c.final.includes(q)) lost.push([c, q, v]); }));
+      // only entity types are decided here: attribute labels, relation roles and structure fields have their own heads
+      const entQ = D.queries.flatMap((q, i) => (q.kind === "entity" ? [i] : [])), lost = [];
+      D.candidates.forEach((c) => entQ.forEach((q) => {
+        const v = c.probs[q];
+        if (v < thr || c.final.includes(q)) return;
+        const beaten = D.entities.some((e) => e.label === q && e.start < c.ce && c.cs < e.end);
+        lost.push([c, q, v, D.null && D.null[q] > abs ? "type dropped" : beaten ? "overlaps a kept stretch" : "not kept"]);
+      }));
       const twice = spanGroups(D.entities).filter((g) => g.labels.length > 1);
       return `${highlighted(D.entities)}
-        ${twice.length ? `<div class="note key">“${esc(D.input.text.slice(twice[0].start, twice[0].end))}” comes out with ${twice[0].labels.length} labels. This model resolves overlaps within each query, but not between different queries. If you want only one, decide afterwards, for example by keeping the highest score.</div>` : ""}
+        ${twice.length ? `<div class="note key">“${esc(D.input.text.slice(twice[0].start, twice[0].end))}” comes out with ${twice[0].labels.length} labels. This model resolves overlaps within each entity type, but not between different types. If you want only one, decide afterwards, for example by keeping the highest score.</div>` : ""}
         <ul class="list" style="margin-top:12px">${D.entities.map((e) => `<li><span>${labChip(e.label)} “${esc(e.text)}”</span><span class="num">${f2(e.score)}</span></li>`).join("") || "<li>No entity passes the threshold.</li>"}</ul>
-        ${D.null ? `<h3>Is there any for each query?</h3>${bars(D.input.labels.map((l, q) => [labChip(q), 1 - D.null[q]]))}<p style="font-size:13px;color:var(--muted);margin-top:6px">If it falls below ${f2(1 - abs)}, that query is dropped.</p>` : ""}
-        ${lost.length ? `<h3>Passed the threshold but were discarded</h3><ul class="list">${lost.slice(0, 8).map(([c, q, v]) => `<li><span>${labChip(q)} “${esc(c.text)}”</span><span class="num">${f2(v)} · ${D.null && D.null[q] > abs ? "query dropped" : "overlaps"}</span></li>`).join("")}</ul>` : ""}`;
+        ${D.null ? `<h3>Is there any of each entity type?</h3>${bars(entQ.map((q) => [labChip(q), 1 - D.null[q]]))}<p style="font-size:13px;color:var(--muted);margin-top:6px">If it falls below ${f2(1 - abs)}, that type is dropped.</p>` : ""}
+        ${lost.length ? `<h3>Passed the threshold but were discarded</h3><ul class="list">${lost.slice(0, 8).map(([c, q, v, why]) => `<li><span>${labChip(q)} “${esc(c.text)}”</span><span class="num">${f2(v)} · ${why}</span></li>`).join("")}</ul>` : ""}`;
     },
-    tech: () => `<dl class="tech"><dt>Abstention</dt><dd><code>null_projection</code> per query; the query is dropped if its probability is above ${f2(D.abstention_threshold)}.</dd>
-      <dt>Overlaps</dt><dd><code>overlap_policy = "flat"</code>: per query, it selects the non-overlapping intervals with the maximum sum of scores. Overlaps between different queries are not resolved here.</dd>
+    tech: () => `<dl class="tech"><dt>Abstention</dt><dd><code>null_projection</code> per entity type; the type is dropped if its probability is above ${f2(D.abstention_threshold)}.</dd>
+      <dt>Overlaps</dt><dd><code>overlap_policy = "flat"</code>: per entity type, it selects the non-overlapping intervals with the maximum sum of scores. Overlaps between different types are not resolved here.</dd>
       <dt>Positions</dt><dd>The start and end maps of each word translate gaps into character offsets.</dd>
       <dt>Code</dt><dd class="file">gliner2/models/boundary/engine.py · _decode_entities</dd></dl>`,
   },
@@ -1575,16 +1605,16 @@ const CONTENT = {
   },
   recInst: {
     what: () => `<p>A structure keeps <b>which value belongs to which record</b>: “Alice bought apples and Bob bought oranges” holds two purchases, not one list of buyers and one list of items.</p>
-      <p>One field is the <b>anchor</b> (marked * in the form). Every candidate stretch for the anchor becomes a possible record, an <b>instance</b>. The record head decides how likely each instance is to be a real record; instances ≥ ${f2(D.input.threshold)} are kept.</p>`,
+      <p>One field is the <b>anchor</b> (marked * in the form). Every candidate stretch for the anchor becomes a possible record, an <b>instance</b>. In this mode there is no separate detector: an instance's probability is the anchor's own span score, and instances ≥ ${f2(D.input.threshold)} are kept.</p>`,
     mine: () => D.records.map((g) => `<h3>${esc(g.name)} <span class="mono" style="font-size:12px;color:var(--muted)">anchor: ${esc(g.fields.find((f) => f.anchor)?.name ?? "")}</span></h3>
       <ul class="list">${g.instances.map((inst) => `<li><span>“${esc(inst.text ?? "—")}”</span><span class="num">${f2(inst.prob)} · ${inst.prob >= g.threshold ? "kept" : "dropped"}</span></li>`).join("") || "<li>No instance.</li>"}</ul>`).join("")
       + `<p style="font-size:13px;color:var(--muted);margin-top:8px">The list shows the 8 most likely instances.</p>`,
-    tech: () => `<dl class="tech"><dt>RecordHead</dt><dd>Mode <code>natural</code>: one instance per anchor candidate. Record states of ${INFO.records.dim} numbers. Probability = sigmoid(logit ÷ record temperature). Parameters: ${nf(INFO.params.record_decoder)}.</dd>
+    tech: () => `<dl class="tech"><dt>RecordHead</dt><dd>Mode <code>natural</code>: one instance per anchor candidate. The instance state is that candidate's state (${INFO.hidden} numbers) and its logit is the anchor's span logit; probability = sigmoid(logit ÷ record temperature). Fields are matched to instances in a ${INFO.records.dim}-number space. Parameters: ${nf(INFO.params.record_decoder)}.</dd>
       <dt>Code</dt><dd class="file">gliner2/models/boundary/records.py · RecordHead · decode_group</dd></dl>`,
   },
   recFields: {
     what: () => `<p>Each kept instance now fills its other fields. For every field it compares the candidate stretches <b>and an explicit “absent” option</b>, so a record can leave a field empty instead of taking a wrong value.</p>
-      <p>A single-value field uses a softmax over “absent” plus the candidates; a list field uses one sigmoid per candidate. The anchor field is the instance itself. The arcs in the 3D view join each anchor to its values.</p>`,
+      <p>Every non-anchor field in these examples holds one value, so it uses a softmax over “absent” plus the candidates. (A list field would use one sigmoid per candidate.) The anchor field is the instance itself. The arcs in the 3D view join each anchor to its values.</p>`,
     mine: () => D.records.map((g) => {
       const kept = g.instances.filter((inst) => inst.prob >= g.threshold), th = (t) => `<th style="font-family:var(--sans);font-size:11px">${t}</th>`;
       return `<h3>${esc(g.name)}</h3>${kept.map((inst) => `<p style="margin:10px 0 4px"><b>Instance “${esc(inst.text)}”</b></p>
@@ -1595,7 +1625,7 @@ const CONTENT = {
         </tbody></table>`).join("") || "<p>No instance was kept.</p>"}
         <h3>Result</h3><ul class="list">${g.result.map((rec) => `<li><span>${Object.entries(rec).map(([k, v]) => `${esc(k)}: “${esc(one(v)?.text ?? "—")}”`).join(", ")}</span></li>`).join("") || "<li>No record.</li>"}</ul>`;
     }).join(""),
-    tech: () => `<dl class="tech"><dt>Assignment</dt><dd><code>assign_logits[f]</code> has shape <code>[instances, 1 + candidates]</code>; column 0 is ABSENT. Exclusive fields are solved jointly (Hungarian assignment), so two records never take the same value.</dd>
+    tech: () => `<dl class="tech"><dt>Assignment</dt><dd><code>assign_logits[f]</code> has shape <code>[instances, 1 + candidates]</code>; column 0 is ABSENT. Fields here are <code>optional_one</code>: one value or none. A single-value field marked <code>exclusive</code> would be solved jointly (Hungarian assignment) so that two records never take the same value; these examples do not use exclusive fields.</dd>
       <dt>Code</dt><dd class="file">gliner2/models/boundary/records.py · decode_group</dd></dl>`,
   },
   clsScore: {
@@ -1649,7 +1679,7 @@ function aboutHTML() {
     <ul><li><b>Small</b>: 74M to 287M parameters. It runs locally, on CPU or GPU.</li>
       <li><b>No fixed label list</b>: you write the labels when you run it (zero-shot).</li>
       <li><b>One pass</b> through the encoder for every task in the schema.</li>
-      <li><b>Exact positions</b>: every answer comes with its character offsets in the text.</li>
+      <li><b>Exact positions</b>: every stretch it extracts (entities, relation ends, record fields) comes with its character offsets in the text.</li>
       <li><b>Multilingual</b>: gliner2.5-multi-v1 reads many languages; the small and base checkpoints are English.</li>
       <li><b>Open</b>: Apache-2.0, and you can fine-tune it on your own data.</li></ul>
     <div class="note key">Each tab above the sentence follows one task through the model. Start with <button type="button" class="linkish" data-task-go="entities">Entities</button> or try <button type="button" class="linkish" data-task-go="all">all tasks at once</button>.</div>
@@ -1657,13 +1687,14 @@ function aboutHTML() {
       <a href="https://github.com/fastino-ai/GLiNER2" target="_blank" rel="noopener">GLiNER2 on GitHub</a>
       <a href="https://arxiv.org/abs/2507.18546" target="_blank" rel="noopener">Paper · arXiv 2507.18546</a>
       <a href="https://fastino.ai" target="_blank" rel="noopener">Fastino AI</a>
-      <span>This page runs <code>${esc(INFO.name)}</code>.</span></p>`;
+      <span>${STATIC ? "These answers were computed with" : "This page runs"} <code>${esc(INFO.name)}</code>.</span></p>`;
 }
 function techModel() {
   const P = INFO.params;
   return `<dl class="tech"><dt>Model</dt><dd><code>${esc(INFO.name)}</code>: ${esc(INFO.encoder)} encoder (mDeBERTa-v3) + boundary head.</dd>
     <dt>Size</dt><dd>${nf(P.total)} parameters: embeddings ${pctOf(P.embeddings, P.total)}%, Transformer layers ${pctOf(P.encoder - P.embeddings, P.total)}%, boundary head ${((100 * (P.boundary_encoder + P.query_head + P.pool + P.scorer)) / P.total).toFixed(1)}%.</dd>
     <dt>Encoder</dt><dd>${INFO.layers} layers, ${INFO.hidden} dimensions, ${INFO.heads} attention heads.</dd>
+    <dt>Run</dt><dd>${INFO.revision ? `Checkpoint revision <code>${esc(INFO.revision.slice(0, 7))}</code>, ` : ""}${Object.entries(INFO.versions ?? {}).map(([k, v]) => `${esc(k)} ${esc(v)}`).join(", ")}, ${esc(INFO.dtype ?? "")} on ${esc(INFO.device ?? "")}.${INFO.baked_at ? ` Answers baked on ${esc(INFO.baked_at.slice(0, 10))} from source commit <code>${esc((INFO.source_commit ?? "").slice(0, 7))}</code>.` : ""}</dd>
     <dt>Head</dt><dd>Gaps of ${INFO.boundary_dim} dims · bag of top-${INFO.pool_top_k} × top-${INFO.pool_top_k}, at most ${INFO.pool_size} candidates.</dd>
     <dt>Heads</dt><dd>Span path (gaps, marks, pool, scorer) ${nf(P.boundary_encoder + P.query_head + P.pool + P.scorer)} · classifier ${nf(P.classifier)} · relation scorer ${nf(P.relation_scorer)} · record head ${nf(P.record_decoder)} parameters. They all read the same encoder output.</dd></dl>`;
 }
@@ -1763,7 +1794,7 @@ async function analyze() {
     S.label = 0; S.focusTok = D.qmarkers[0]; S.mapLayer = first ? 0 : S.mapLayer;
     GROUPS = groupsFor(D); buildSteps(INFO.layers); S.step = Math.min(S.step, STEPS.length - 1);
     buildTower(); buildMap(); updateHeights();
-    $("#status").textContent = `${INFO.name} · ${D.ms} ms`;
+    $("#status").textContent = `${INFO.name} · ${D.ms} ms${STATIC ? " (precomputed)" : ""}`;
     if (first || S.overview) overview(); else selectStep(S.step);
     if (S.view === "map") setView("map");
     renderRail(); renderPanel();
@@ -1854,6 +1885,7 @@ addEventListener("keydown", (e) => {
   }
   if (STATIC) {
     document.body.classList.add("static");
+    $(".land-lede").textContent = "Pick a task, open an example and watch the model turn text into entities, labels, relations and records, stage by stage and layer by layer.";
     document.querySelectorAll(".composer input[type=text]").forEach((i) => (i.readOnly = true));
     $("#thr").disabled = $("#go").disabled = true;
   }
