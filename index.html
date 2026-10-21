@@ -269,7 +269,7 @@ body.static .composer input[type=text] { background: var(--wash); color: var(--m
     <div class="field" data-f="str"><label for="fStr">Structure</label><input id="fStr" type="text" autocomplete="off" spellcheck="false" placeholder="launch: product*, company, place" title="name: fields. * marks the anchor field (default: the first). Separate structures with ;"></div>
   </div>
   <div class="sub" id="examples"><span>Examples:</span></div>
-  <p class="static-note">Online demo: the examples were run through the real model ahead of time. To analyze your own sentences, <a href="https://github.com/polodealvarado/gliner2-visualizer#start" target="_blank" rel="noopener">run it on your computer</a>.</p>
+  <p class="static-note">Online demo: the examples were run through the real model ahead of time. To analyze your own sentences, <a href="https://github.com/polodealvarado/gliner2-visualizer#run-it-locally" target="_blank" rel="noopener">run it on your computer</a>.</p>
 </form>
 <main>
   <nav id="rail" aria-label="Model stages"></nav>
@@ -699,10 +699,11 @@ const BUILD = {
       const js = wordsIn(it.start, it.end);
       if (!js.length) return;
       js.forEach((j) => paint(p, j, LC(it.label), 0.3));
-      const [x0, x1] = spanEdges(js), n = a.labels.length, w = Math.min(0.55, (x1 - x0 - 0.1) / n), z = -0.35 - 0.75 * ai, best = argmax(it.probs);
+      const [x0, x1] = spanEdges(js), n = a.labels.length, w = Math.min(0.55, (x1 - x0 - 0.1) / n), z = -0.35 - 0.75 * ai;
       a.labels.forEach((l, li) => addTile(p, x0 + ((x1 - x0) * (li + 0.5)) / n, z, w, 0.36, 0.03 + 1.2 * it.probs[li], LC(attrQ(a, l)), { type: "attr", ai, li, item: it }));
-      const tag = sprite(`${a.group}: ${a.labels[best]} · ${f2(it.probs[best])}`, 0.28, '600 46px Inter, sans-serif', LC(attrQ(a, a.labels[best])));
-      tag.position.set((x0 + x1) / 2, TOP + 1.2 * it.probs[best] + 0.4, z);
+      const picks = attrPicks(a, it), top = Math.max(...(picks.length ? picks.map((i) => it.probs[i]) : it.probs));
+      const tag = sprite(`${a.group}: ${picks.map((i) => `${a.labels[i]} · ${f2(it.probs[i])}`).join(", ") || "none"}`, 0.28, '600 46px Inter, sans-serif', picks.length ? LC(attrQ(a, a.labels[picks[0]])) : C.muted);
+      tag.position.set((x0 + x1) / 2, TOP + 1.2 * top + 0.4, z);
       p.labels.add(tag);
     }));
     return p;
@@ -778,7 +779,7 @@ const BUILD = {
     D.relations.filter((r) => r.kept).forEach((r) => relationArc(p, r, "kept"));
     recordArcs(p, types.length);
     const texts = D.classifications.map((c) => `${c.task}: ${c.chosen.map((j) => c.labels[j]).join(", ")}`), L = row(texts, (t) => 0.19 * t.length, 1);
-    texts.forEach((t, k) => { const sp = sprite(t, 0.38, '600 50px Inter, sans-serif', C.cls); sp.position.set(L.xs[k], TOP + 0.45, 0.2 - 0.75 * Math.max(1, types.length)); p.labels.add(sp); });
+    texts.forEach((t, k) => { const sp = sprite(t, 0.38, '600 50px Inter, sans-serif', C.cls); sp.position.set(L.xs[k], TOP + 0.45, 0.2 - 0.75 * Math.max(1, types.length + nr)); p.labels.add(sp); });
     return p;
   },
 };
@@ -789,7 +790,9 @@ function recordArcs(p, lane) {
     g.result.forEach((rec) => {
       const z = 0.2 - 0.75 * lane++, a = one(rec[anchor.name]), ja = a ? wordsIn(a.start, a.end) : [];
       if (!ja.length) return;
-      const ax = mid(spanEdges(ja));
+      const ax = mid(spanEdges(ja)), tag = sprite(`${g.name} · ${anchor.name}`, 0.24, '600 46px Inter, sans-serif', LC(fieldQ(g, anchor.name)));
+      tag.position.set(ax, TOP + 0.55, z);
+      p.labels.add(tag);
       g.fields.forEach((f) => {
         const v = one(rec[f.name]), js = v && !f.anchor ? wordsIn(v.start, v.end) : [];
         if (!js.length) return;
@@ -802,6 +805,8 @@ function recordArcs(p, lane) {
     });
   });
 }
+// labels the decoder keeps for one entity: argmax for a single-label group, every label >= threshold for a multi-label one
+const attrPicks = (a, it) => (a.multi_label ? it.probs.flatMap((v, i) => (v >= a.threshold ? [i] : [])) : [argmax(it.probs)]);
 const wordsIn = (start, end) => D.words.flatMap((w, j) => (w.start >= start && w.end <= end ? [j] : []));
 const spanEdges = (js) => [WL.xs[js[0]] - WL.ws[js[0]] / 2, WL.xs[js.at(-1)] + WL.ws[js.at(-1)] / 2];
 const mid = ([a, b]) => (a + b) / 2;
@@ -819,7 +824,7 @@ function markEntities(p, ents, withAttributes = false) {
     if (!js.length) return;
     js.forEach((j) => { paint(p, j, LC(e.label), 0.5); p.anch.word[j].userData.ent = e; });
     const attrs = withAttributes ? D.attributes.flatMap((a) => a.items.filter((it) => it.start === e.start && it.end === e.end && it.label === e.label)
-      .map((it) => ` · ${a.group}: ${a.labels[argmax(it.probs)]}`)) : [];
+      .flatMap((it) => { const picks = attrPicks(a, it); return picks.length ? [` · ${a.group}: ${picks.map((i) => a.labels[i]).join(", ")}`] : []; })) : [];
     const tag = sprite(`${D.input.labels[e.label]} · ${f2(e.score)}${attrs.join("")}`, 0.34, '600 46px Inter, sans-serif', LC(e.label));
     const n = (stacked[`${e.start}-${e.end}`] = (stacked[`${e.start}-${e.end}`] ?? -1) + 1);
     tag.position.set(mid(spanEdges(js)), TOP + 1.05 + 0.42 * n, p.anch.word[js[0]].position.z);
@@ -1166,6 +1171,7 @@ async function mapPlay() {
 }
 function setView(v) {
   S.view = v; stopPlay();
+  if (v === "map") S.about = false; // the map has its own panel
   $("#vFlow").classList.toggle("on", v === "flow"); $("#vMap").classList.toggle("on", v === "map");
   tower.visible = parts.visible = v === "flow"; mapG.visible = v === "map";
   $("#flowCtl").style.display = v === "flow" ? "flex" : "none"; $("#mapCtl").style.display = v === "map" ? "flex" : "none";
@@ -1331,7 +1337,7 @@ const qDesc = (q) => ({ entity: "Entity type", attribute: `Label of the attribut
 function otherAnswers() {
   const L = D.input.labels, li = [];
   D.classifications.forEach((c) => li.push(`<li><span>${esc(c.task)}</span><span>${c.chosen.map((j) => choiceChip(D.choices.findIndex((x) => x.task === c.task && x.j === j))).join(" ")}</span></li>`));
-  D.attributes.forEach((a) => a.items.forEach((it) => { const j = argmax(it.probs); li.push(`<li><span>“${esc(D.input.text.slice(it.start, it.end))}” · ${esc(a.group)}</span><span>${esc(a.labels[j])} <span class="num">${f2(it.probs[j])}</span></span></li>`); }));
+  D.attributes.forEach((a) => a.items.forEach((it) => li.push(`<li><span>“${esc(D.input.text.slice(it.start, it.end))}” · ${esc(a.group)}</span><span>${attrPicks(a, it).map((j) => `${esc(a.labels[j])} <span class="num">${f2(it.probs[j])}</span>`).join(", ") || "none"}</span></li>`)));
   D.relations.filter((r) => r.kept).forEach((r) => li.push(`<li><span>“${esc(r.head_text)}” → “${esc(r.tail_text)}”</span><span>${esc(r.type)} <span class="num">${f2(r.prob)}</span></span></li>`));
   D.records.forEach((g) => g.result.forEach((rec) => li.push(`<li><span>${esc(g.name)}</span><span>${Object.entries(rec).map(([k, v]) => `${esc(k)}: “${esc(v?.text ?? "—")}”`).join(", ")}</span></li>`)));
   return li.length ? `<h3>Other answers</h3><ul class="list">${li.join("")}</ul>` : "";
@@ -1569,7 +1575,7 @@ const CONTENT = {
       <p>Within a group the scores become shares that add up to 1 (softmax) and the largest wins. In the form, <code>→ person</code> keeps a group away from other entity types.</p>
       <div class="note">Why ask it this way? “happy” is not a stretch of text by itself, but the model can still tell how well “happy” fits the stretch “Alice” in this sentence.</div>`,
     mine: () => D.attributes.map((a) => {
-      const hit = (it, v, li) => (a.multi_label ? v >= a.threshold : li === argmax(it.probs));
+      const hit = (it, v, li) => attrPicks(a, it).includes(li);
       return `<h3>${esc(a.group)}${a.applies_to ? ` <span class="mono" style="font-size:12px;color:var(--muted)">→ ${a.applies_to.map(esc).join(", ")}</span>` : ""}</h3>
         ${a.items.length ? `<table class="heat"><thead><tr><th></th>${a.labels.map((l) => `<th style="font-family:var(--sans);font-size:11px">${esc(l)}</th>`).join("")}</tr></thead><tbody>
         ${a.items.map((it) => `<tr><th>“${esc(D.input.text.slice(it.start, it.end))}”</th>${it.probs.map((v, li) => `<td class="v ${hit(it, v, li) ? "hit" : ""}" style="background:${hit(it, v, li) ? LC(attrQ(a, a.labels[li])) : ramp(v * 0.8, LC(attrQ(a, a.labels[li])))}">${f2(v)}</td>`).join("")}</tr>`).join("")}
