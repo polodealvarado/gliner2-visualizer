@@ -5,6 +5,7 @@
 **Watch a real information-extraction model read your sentence, stage by stage and layer by layer.**
 
 [![Live demo](https://img.shields.io/badge/Live_demo-Hugging_Face_Space-ffcc4d?logo=huggingface&logoColor=black)](https://huggingface.co/spaces/polodealvarado/gliner2-visualizer)
+[![Source code](https://img.shields.io/badge/Source_code-GitHub-24292f?logo=github)](https://github.com/polodealvarado/gliner2-visualizer)
 [![Model](https://img.shields.io/badge/Model-fastino%2Fgliner2.5--multi--v1-3D6FB0)](https://huggingface.co/fastino/gliner2.5-multi-v1)
 [![Built on GLiNER2](https://img.shields.io/badge/Built_on-GLiNER2-1F2D3D?logo=github)](https://github.com/fastino-ai/GLiNER2)
 
@@ -24,7 +25,7 @@ Each stage explains itself three times: in plain words, with the real values for
 
 | Where | What you get |
 |---|---|
-| **[Online](https://huggingface.co/spaces/polodealvarado/gliner2-visualizer)** | Every example of every task, run through the real model ahead of time. No installation. |
+| **[Online](https://huggingface.co/spaces/polodealvarado/gliner2-visualizer)** | Precomputed examples for every task. Sentences, schemas and threshold are fixed. No installation. |
 | **[On your computer](#run-it-locally)** | `uv run server.py`: any sentence and any schema, live. |
 
 ## What is GLiNER2.5?
@@ -202,7 +203,25 @@ api.upload_folder(repo_id=repo, repo_type="space", folder_path=".", allow_patter
 api.upload_file(path_or_fileobj="SPACE.md", path_in_repo="README.md", repo_id=repo, repo_type="space")
 ```
 
-A live Space works with the same `Dockerfile`, but Docker Spaces need a Hugging Face PRO account.
+### Live processing and hosting costs
+
+To accept new sentences online, deploy `Dockerfile`, `server.py` and `index.html` as a Docker Space.
+Set `sdk: docker` and `app_port: 7860` in the Space README front matter, and remove `app_file: index.html`.
+The server loads the model and exposes `/api/info` and `/api/analyze`; the page then enables the form automatically.
+Unlocking the static form alone cannot process new text.
+
+For a personal account, Docker Spaces require Hugging Face PRO.
+Prices checked on October 22, 2026, in USD:
+
+| Deployment | Hosting | PRO subscription | Total per month |
+|---|---|---|---|
+| Static examples (current Space) | Free | Not required | $0 |
+| Live model on CPU Basic (2 vCPU, 16 GB RAM) | Free | $9/month | $9 |
+| Live model on CPU Upgrade (8 vCPU, 32 GB RAM) | $0.03/hour | $9/month | $30.60 at 720 running hours |
+
+CPU Basic is the starting option to measure latency before upgrading; this project's live model has not yet been validated on that hardware.
+Free hardware can sleep when idle, so the first request after waking may wait for startup.
+See [current pricing](https://huggingface.co/pricing), [Space requirements](https://huggingface.co/docs/hub/spaces-overview) and [Docker configuration](https://huggingface.co/docs/hub/spaces-sdks-docker).
 
 ## Simplifications
 

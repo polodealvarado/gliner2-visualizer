@@ -178,7 +178,7 @@ body.landing #stage { position: fixed; inset: 0; height: auto; z-index: 40; } /*
 body.landing #stage > :not(canvas) { display: none; }
 body:not(.landing) #landing { display: none; }
 body.landing { overflow: hidden; }
-#landing { position: fixed; inset: 0; z-index: 41; display: grid; grid-template-rows: 1fr auto;
+#landing { position: fixed; inset: 0; z-index: 41; display: grid; grid-template-rows: 1fr auto; overflow-y: auto;
   background: linear-gradient(90deg, rgba(238, 243, 248, .97) 0%, rgba(238, 243, 248, .92) 36%, rgba(238, 243, 248, .4) 60%, rgba(238, 243, 248, 0) 78%); }
 .land-in { align-self: center; max-width: 640px; padding: 40px 64px; }
 .land-kicker { margin: 0; font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--terra); }
@@ -207,6 +207,7 @@ body.landing { overflow: hidden; }
 .static-note { display: none; order: 6; flex-basis: 100%; margin: 0; font-size: 12.5px; color: var(--muted); }
 .static-note a { color: var(--ink); text-decoration: underline dotted var(--faint); text-underline-offset: 3px; }
 body.static .static-note { display: block; }
+.land-in .static-note { margin-top: 12px; }
 body.static .composer input[type=text] { background: var(--wash); color: var(--muted); }
 
 /* footer: credits */
@@ -269,7 +270,7 @@ body.static .composer input[type=text] { background: var(--wash); color: var(--m
     <div class="field" data-f="str"><label for="fStr">Structure</label><input id="fStr" type="text" autocomplete="off" spellcheck="false" placeholder="launch: product*, company, place" title="name: fields. * marks the anchor field (default: the first). Separate structures with ;"></div>
   </div>
   <div class="sub" id="examples"><span>Examples:</span></div>
-  <p class="static-note">Online demo: the examples were run through the real model ahead of time. To analyze your own sentences, <a href="https://github.com/polodealvarado/gliner2-visualizer#run-it-locally" target="_blank" rel="noopener">run it on your computer</a>.</p>
+  <p class="static-note">Example-only demo: sentences, schemas and threshold are fixed because the results were precomputed with the real model. Choose an example above, or <a href="https://github.com/polodealvarado/gliner2-visualizer#run-it-locally" target="_blank" rel="noopener">run it locally to analyze your own text</a>. <a href="https://github.com/polodealvarado/gliner2-visualizer" target="_blank" rel="noopener">Source code on GitHub</a>.</p>
 </form>
 <main>
   <nav id="rail" aria-label="Model stages"></nav>
@@ -316,6 +317,7 @@ body.static .composer input[type=text] { background: var(--wash); color: var(--m
 <footer class="foot">
   <span>Built on <a href="https://github.com/fastino-ai/GLiNER2" target="_blank" rel="noopener">GLiNER2</a> by <a href="https://fastino.ai" target="_blank" rel="noopener">Fastino AI</a></span>
   <a id="modelLink" href="https://huggingface.co/fastino/gliner2.5-multi-v1" target="_blank" rel="noopener">Model card</a>
+  <a href="https://github.com/polodealvarado/gliner2-visualizer" target="_blank" rel="noopener">Source code · GitHub</a>
   <a href="https://arxiv.org/abs/2507.18546" target="_blank" rel="noopener">Paper · arXiv 2507.18546</a>
   <span>Made by <a href="https://huggingface.co/polodealvarado" target="_blank" rel="noopener">@polodealvarado</a></span>
   <span class="aside">Independent project, not affiliated with Fastino.</span>
@@ -331,9 +333,10 @@ body.static .composer input[type=text] { background: var(--wash); color: var(--m
       <button class="primary" id="landGo" type="button">Start exploring</button>
       <button class="ghost" type="button" data-about>What is GLiNER2.5?</button>
     </div>
+    <p class="static-note">This online demo shows precomputed examples. To analyze your own text, <a href="https://github.com/polodealvarado/gliner2-visualizer#run-it-locally" target="_blank" rel="noopener">run it locally</a>. <a href="https://github.com/polodealvarado/gliner2-visualizer" target="_blank" rel="noopener">Source code on GitHub</a>.</p>
     <p class="land-meta" id="landMeta">Loading the model…</p>
   </div>
-  <p class="land-foot">Built on <a href="https://github.com/fastino-ai/GLiNER2" target="_blank" rel="noopener">GLiNER2</a> by <a href="https://fastino.ai" target="_blank" rel="noopener">Fastino AI</a> · Made by <a href="https://huggingface.co/polodealvarado" target="_blank" rel="noopener">@polodealvarado</a> · Independent project, not affiliated with Fastino.</p>
+  <p class="land-foot"><a href="https://github.com/polodealvarado/gliner2-visualizer" target="_blank" rel="noopener">Source code on GitHub</a> · Built on <a href="https://github.com/fastino-ai/GLiNER2" target="_blank" rel="noopener">GLiNER2</a> by <a href="https://fastino.ai" target="_blank" rel="noopener">Fastino AI</a> · Made by <a href="https://huggingface.co/polodealvarado" target="_blank" rel="noopener">@polodealvarado</a> · Independent project, not affiliated with Fastino.</p>
 </section>
 <div id="tip"></div>
 <div id="toast" role="alert"></div>
